@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/fgrosse/go-coverage-report/pkg"
 )
 
 var usage = strings.TrimSpace(fmt.Sprintf(`
@@ -75,22 +73,22 @@ func programArgs() (oldCov, newCov, changedFile string, opts options) {
 }
 
 func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
-	oldCov, err := coverage.Parse(oldCovPath)
+	oldCov, err := ParseCoverage(oldCovPath)
 	if err != nil {
 		return fmt.Errorf("failed to parse old coverage: %w", err)
 	}
 
-	newCov, err := coverage.Parse(newCovPath)
+	newCov, err := ParseCoverage(newCovPath)
 	if err != nil {
 		return fmt.Errorf("failed to parse new coverage: %w", err)
 	}
 
-	changedFiles, err := coverage.ParseChangedFiles(changedFilesPath, opts.prefix)
+	changedFiles, err := ParseChangedFiles(changedFilesPath, opts.prefix)
 	if err != nil {
 		return fmt.Errorf("failed to load changed files: %w", err)
 	}
 
-	report := coverage.NewReport(oldCov, newCov, changedFiles)
+	report := NewReport(oldCov, newCov, changedFiles)
 	fmt.Fprintln(os.Stdout, report.Markdown())
 
 	return nil

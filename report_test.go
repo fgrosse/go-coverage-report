@@ -1,4 +1,4 @@
-package coverage
+package main
 
 import (
 	"testing"
@@ -8,10 +8,10 @@ import (
 )
 
 func TestReport_Markdown(t *testing.T) {
-	oldCov, err := Parse("testdata/old-coverage.txt")
+	oldCov, err := ParseCoverage("testdata/old-coverage.txt")
 	require.NoError(t, err)
 
-	newCov, err := Parse("testdata/new-coverage.txt")
+	newCov, err := ParseCoverage("testdata/new-coverage.txt")
 	require.NoError(t, err)
 
 	changedFiles, err := ParseChangedFiles("testdata/changed-files.json", "github.com/fgrosse/prioqueue")

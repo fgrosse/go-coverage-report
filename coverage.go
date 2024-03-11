@@ -1,5 +1,5 @@
 // Package coverage contains code to parse and format code coverage profiles.
-package coverage
+package main
 
 import (
 	"path"
@@ -14,7 +14,7 @@ type Coverage struct {
 	MissedLines  int64
 }
 
-func Parse(filename string) (*Coverage, error) {
+func ParseCoverage(filename string) (*Coverage, error) {
 	pp, err := ParseProfiles(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse profiles")

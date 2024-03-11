@@ -1,4 +1,4 @@
-package coverage
+package main
 
 import (
 	"encoding/json"

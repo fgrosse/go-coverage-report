@@ -1,0 +1,78 @@
+name: 'Go Unit Test Coverage Report'
+description: 'Add a comment to pull requests which summarizes code coverage results.'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ^1.22
+
+    - name: Install go-coverage-report
+      shell: bash
+      run: |
+        go install github.com/fgrosse/go-coverage-report@v0.1.0
+        which go-coverage-report
+
+    - name: Determine changed files
+      id: changed-files
+      uses: tj-actions/changed-files@aa08304bd477b800d468db44fe10f6c61f7f7b11 # v42.1.0
+      with:
+        write_output_files: true
+        json: true
+        files: |
+          **.go
+        files_ignore: |
+          **_test.go
+          vendor/**
+
+    - name: Download code coverage results from current run
+      uses: actions/download-artifact@v4
+      with:
+        name: code-coverage
+        path: .github/outputs
+
+    - name: Rename code coverage results file from current run
+      shell: bash
+      run: |
+        mv .github/outputs/coverage.txt .github/outputs/new-coverage.txt
+
+    - name: Download code coverage results from target branch
+      shell: bash
+      run: |
+        LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch=main --workflow=CI --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
+        if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
+          echo "No successful run found on the target branch"
+          exit 1
+        else
+          echo "Last successful run on the target branch: $LAST_SUCCESSFUL_RUN_ID"
+        fi
+
+        gh run download $LAST_SUCCESSFUL_RUN_ID --name=code-coverage --dir=.github/outputs
+        mv .github/outputs/coverage.txt .github/outputs/old-coverage.txt
+
+    - name: Compare code coverage results
+      shell: bash
+      run: |
+        cat .github/outputs/all_changed_files.json
+
+        go-coverage-report \
+          -prefix=github.com/fgrosse/prioqueue \
+          .github/outputs/old-coverage.txt \
+          .github/outputs/new-coverage.txt \
+          .github/outputs/all_changed_files.json \
+        > coverage-comment.md
+
+    - name: Comment on pull request
+      shell: bash
+      run: |
+        COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments -q '.[] | select(.user.login=="github-actions[bot]" and (.body | test("Coverage Δ")) ) | .id' | head -n 1)
+        if [ -z "$COMMENT_ID" ]; then
+          echo "Creating new coverage report comment"
+        else
+          echo "Replacing old coverage report comment (ID: $COMMENT_ID)"
+          gh api -X DELETE repos/${{ github.repository }}/issues/comments/$COMMENT_ID
+        fi
+
+        gh pr comment ${{ github.event.number }} --body-file=coverage-comment.md

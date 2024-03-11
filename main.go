@@ -6,14 +6,23 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/fgrosse/go-coverage-report/pkg"
 )
 
-var usage = fmt.Sprintf(`Usage: %s [OPTIONS] <OLD_COVERAGE_FILE> <NEW_COVERAGE_FILE> <CHANGED_FILES_FILE>
+var usage = strings.TrimSpace(fmt.Sprintf(`
+Usage: %s [OPTIONS] <OLD_COVERAGE_FILE> <NEW_COVERAGE_FILE> <CHANGED_FILES_FILE>
 
-Parse the OLD_COVERAGE_FILE and NEW_COVERAGE_FILE and compare the coverage of the files listed in CHANGED_FILES_FILE.
-The result is printed to stdout as a simple Markdown table with emojis indicating the coverage change per package.
+Parse the OLD_COVERAGE_FILE and NEW_COVERAGE_FILE and compare the coverage of the
+files listed in CHANGED_FILES_FILE. The result is printed to stdout as a simple
+Markdown table with emojis indicating the coverage change per package.
+
+You can use the -prefix flag to add a prefix to all paths in the list of changed
+files. This is useful to map the changed files (e.g., ["foo/my_file.go"] to their
+coverage profile which uses the full package name to identify the files
+(e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently,
+packages with a different name than their directory are not supported.
 
 ARGUMENTS:
   OLD_COVERAGE_FILE   The path to the old coverage file in the format produced by go test -coverprofile
@@ -21,7 +30,12 @@ ARGUMENTS:
   CHANGED_FILES_FILE  The path to the file containing the list of changed files encoded as JSON string array
 
 OPTIONS:
-`, filepath.Base(os.Args[0]))
+`, filepath.Base(os.Args[0])))
+
+type options struct {
+	prefix string
+	format string
+}
 
 func main() {
 	log.SetFlags(0)
@@ -31,16 +45,16 @@ func main() {
 		flag.PrintDefaults()
 	}
 
+	flag.String("prefix", "", "prefix to add to all paths in the JSON file of changed files")
 	flag.String("format", "markdown", "output format (currently only 'markdown' is supported)")
 
-	oldCov, newCov, changed := programArgs()
-	err := run(oldCov, newCov, changed)
+	err := run(programArgs())
 	if err != nil {
 		log.Fatalln("ERROR: ", err)
 	}
 }
 
-func programArgs() (oldCov, newCov, changedFile string) {
+func programArgs() (oldCov, newCov, changedFile string, opts options) {
 	flag.Parse()
 
 	args := flag.Args()
@@ -52,10 +66,15 @@ func programArgs() (oldCov, newCov, changedFile string) {
 		os.Exit(1)
 	}
 
-	return args[0], args[1], args[2]
+	opts = options{
+		prefix: flag.Lookup("prefix").Value.String(),
+		format: flag.Lookup("format").Value.String(),
+	}
+
+	return args[0], args[1], args[2], opts
 }
 
-func run(oldCovPath, newCovPath, changedFilesPath string) error {
+func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 	oldCov, err := coverage.Parse(oldCovPath)
 	if err != nil {
 		return fmt.Errorf("failed to parse old coverage: %w", err)
@@ -66,7 +85,7 @@ func run(oldCovPath, newCovPath, changedFilesPath string) error {
 		return fmt.Errorf("failed to parse new coverage: %w", err)
 	}
 
-	changedFiles, err := coverage.ParseChangedFiles("github.com/fgrosse/prioqueue", changedFilesPath)
+	changedFiles, err := coverage.ParseChangedFiles(changedFilesPath, opts.prefix)
 	if err != nil {
 		return fmt.Errorf("failed to load changed files: %w", err)
 	}

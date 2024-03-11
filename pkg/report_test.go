@@ -14,7 +14,7 @@ func TestReport_Markdown(t *testing.T) {
 	newCov, err := Parse("testdata/new-coverage.txt")
 	require.NoError(t, err)
 
-	changedFiles, err := ParseChangedFiles("github.com/fgrosse/prioqueue", "testdata/changed-files.json")
+	changedFiles, err := ParseChangedFiles("testdata/changed-files.json", "github.com/fgrosse/prioqueue")
 	require.NoError(t, err)
 
 	report := NewReport(oldCov, newCov, changedFiles)

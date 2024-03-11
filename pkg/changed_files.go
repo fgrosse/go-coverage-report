@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func ParseChangedFiles(rootPackage, filename string) ([]string, error) {
+func ParseChangedFiles(filename, prefix string) ([]string, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -18,8 +18,8 @@ func ParseChangedFiles(rootPackage, filename string) ([]string, error) {
 		return nil, err
 	}
 
-	for i, f := range files {
-		files[i] = filepath.Join(rootPackage, f) // TODO: find a better way
+	for i, file := range files {
+		files[i] = filepath.Join(prefix, file)
 	}
 
 	return files, nil

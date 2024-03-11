@@ -26,7 +26,7 @@ func NewReport(oldCov, newCov *Coverage, changedFiles []string) *Report {
 func changedPackages(changedFiles []string) []string {
 	packages := map[string]bool{}
 	for _, file := range changedFiles {
-		pkg := filepath.Dir(file) // TODO: should we load this from file or get it from the input in a more structured way?
+		pkg := filepath.Dir(file)
 		packages[pkg] = true
 	}
 

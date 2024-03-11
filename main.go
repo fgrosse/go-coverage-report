@@ -39,7 +39,7 @@ func main() {
 	log.SetFlags(0)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage)
+		fmt.Fprintln(os.Stderr, usage)
 		flag.PrintDefaults()
 	}
 
@@ -48,7 +48,7 @@ func main() {
 
 	err := run(programArgs())
 	if err != nil {
-		log.Fatalln("ERROR: ", err)
+		log.Fatalln("ERROR:", err)
 	}
 }
 

@@ -43,16 +43,6 @@ func (c *Coverage) add(p *Profile) {
 		panic(errors.Errorf("profile for file %q already exists", p.FileName))
 	}
 
-	for _, b := range p.Blocks {
-		p.TotalLines += int64(b.NumStmt)
-		if b.Count > 0 {
-			// If we got at least a single hit in this block we say it was covered
-			p.CoveredLines += int64(b.NumStmt)
-		}
-	}
-
-	p.MissedLines = p.TotalLines - p.CoveredLines
-
 	c.Files[p.FileName] = p
 	c.TotalLines += p.TotalLines
 	c.CoveredLines += p.CoveredLines

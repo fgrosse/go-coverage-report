@@ -115,6 +115,16 @@ func ParseProfilesFromReader(rd io.Reader) ([]*Profile, error) {
 			p.Blocks[j] = b
 			j++
 		}
+
+		for _, b := range p.Blocks {
+			p.TotalLines += int64(b.NumStmt)
+			if b.Count > 0 {
+				// If we got at least a single hit in this block we say it was covered
+				p.CoveredLines += int64(b.NumStmt)
+			}
+		}
+		p.MissedLines = p.TotalLines - p.CoveredLines
+
 		p.Blocks = p.Blocks[:j]
 	}
 	// Generate a sorted slice.

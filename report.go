@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"path/filepath"
@@ -109,6 +110,15 @@ func (r *Report) Markdown() string {
 	}
 
 	return report.String()
+}
+
+func (r *Report) JSON() string {
+	data, err := json.MarshalIndent(r, "", "    ")
+	if err != nil {
+		panic(err) // should never happen
+	}
+
+	return string(data)
 }
 
 func round(val float64, places int) float64 {

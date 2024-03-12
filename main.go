@@ -89,7 +89,15 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 	}
 
 	report := NewReport(oldCov, newCov, changedFiles)
-	fmt.Fprintln(os.Stdout, report.Markdown())
+
+	switch strings.ToLower(opts.format) {
+	case "markdown":
+		fmt.Fprintln(os.Stdout, report.Markdown())
+	case "json":
+		fmt.Fprintln(os.Stdout, report.JSON())
+	default:
+		return fmt.Errorf("unsupported format: %q", opts.format)
+	}
 
 	return nil
 }

@@ -86,10 +86,8 @@ end_group
 start_group "Download code coverage results from target branch"
 LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
 if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
-  echo "No successful run found on the target branch \"$TARGET_BRANCH\" for workflow \"$GITHUB_WORKFLOW\""
+  echo "::error::No successful run found on the target branch"
   exit 1
-else
-  echo "Last successful run on the target branch \"$TARGET_BRANCH\": $LAST_SUCCESSFUL_RUN_ID"
 fi
 
 gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs
@@ -111,7 +109,7 @@ COMMENT_ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${GITHUB_PULL_REQUEST_NUM
 if [ -z "$COMMENT_ID" ]; then
   echo "Creating new coverage report comment"
 else
-  echo "Replacing old coverage report comment (ID: $COMMENT_ID)"
+  echo "Replacing old coverage report comment"
   gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/comments/${COMMENT_ID}"
 fi
 

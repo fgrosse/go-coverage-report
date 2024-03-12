@@ -34,7 +34,7 @@ runs:
 
     - name: Install go-coverage-report
       shell: bash
-      run: go install github.com/fgrosse/go-coverage-report@5f897d332e09b79317ab9ae7754d20497fa62e0d
+      run: go install github.com/fgrosse/go-coverage-report@2a071c9ab41bd4280ec928b9ce92d5ea87b961a4
 
     - name: Determine changed files
       id: changed-files

@@ -39,20 +39,9 @@ if [[ $# != 3 ]]; then
   exit 1
 fi
 
-if [[ -z ${GITHUB_REPOSITORY+x} ]]; then
-    echo "The GITHUB_REPOSITORY environment variable is missing or empty."
-    exit 1
-fi
-
-if [[ -z ${GITHUB_RUN_ID+x} ]]; then
-    echo "The GITHUB_RUN_ID environment variable is missing or empty."
-    exit 1
-fi
-
-if [[ -z ${GITHUB_PULL_REQUEST_NUMBER+x} ]]; then
-    echo "The GITHUB_PULL_REQUEST_NUMBER environment variable is missing or empty."
-    exit 1
-fi
+GITHUB_REPOSITORY=$1
+GITHUB_PULL_REQUEST_NUMBER=$2
+GITHUB_RUN_ID=$3
 
 GITHUB_WORKFLOW=${GITHUB_WORKFLOW:-CI}
 TARGET_BRANCH=${GITHUB_BASE_REF:-main}
@@ -63,6 +52,21 @@ OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
 NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
 COVERAGE_COMMENT_PATH=.github/outputs/coverage-comment.md
 CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_changed_files.json}
+
+if [[ -z ${GITHUB_REPOSITORY+x} ]]; then
+    echo "Missing github_repository argument"
+    exit 1
+fi
+
+if [[ -z ${GITHUB_PULL_REQUEST_NUMBER+x} ]]; then
+    echo "Missing github_pull_request_number argument"
+    exit 1
+fi
+
+if [[ -z ${GITHUB_RUN_ID+x} ]]; then
+    echo "Missing github_run_id argument"
+    exit 1
+fi
 
 echo "::group::Download code coverage results from current run"
 gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs

@@ -6,11 +6,11 @@ inputs:
   coverage-artifact-name:
     description: 'The name of the artifact containing the code coverage results'
     required: true
-    default: 'code-coverage'
+    default: "code-coverage"
   coverage-file-name:
     description: 'The name of the file containing the code coverage results'
     required: true
-    default: 'coverage.txt'
+    default: "coverage.txt"
   prefix:
     description: |
       A prefix to add to all paths in the JSON file of changed files.
@@ -19,7 +19,7 @@ inputs:
       (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently,
       packages with a different name than their directory are not supported.
     required: false
-    default: ${{ github.repository }}
+    default: "github.com/${{ github.repository }}"
   trim:
     description: Trim a prefix in the "Impacted Packages" column of the markdown report
     required: false

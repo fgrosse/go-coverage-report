@@ -68,12 +68,22 @@ if [[ -z ${GITHUB_RUN_ID+x} ]]; then
     exit 1
 fi
 
-echo "::group::Download code coverage results from current run"
+start_group(){
+    echo "::group::$*"
+    { set -x; return; } 2>/dev/null
+}
+
+end_group(){
+    { set +x; return; } 2>/dev/null
+    echo "::endgroup::"
+}
+
+start_group "Download code coverage results from current run"
 gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs
 mv ".github/outputs/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH
-echo "::endgroup::"
+end_group
 
-echo "::group::Download code coverage results from target branch"
+start_group "Download code coverage results from target branch"
 LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
 if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
   echo "No successful run found on the target branch \"$TARGET_BRANCH\" for workflow \"$GITHUB_WORKFLOW\""
@@ -84,19 +94,19 @@ fi
 
 gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs
 mv ".github/outputs/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
-echo "::endgroup::"
+end_group
 
-echo "::group::Compare code coverage results"
+start_group "Compare code coverage results"
 go-coverage-report \
-  -prefix="$COVERAGE_REPORT_PREFIX" \
-  -trim="$COVERAGE_REPORT_TRIM" \
-  $OLD_COVERAGE_PATH \
-  $NEW_COVERAGE_PATH \
-  "$CHANGED_FILES_PATH" \
-> $COVERAGE_COMMENT_PATH
-echo "::endgroup::"
+    -prefix="$COVERAGE_REPORT_PREFIX" \
+    -trim="$COVERAGE_REPORT_TRIM" \
+    $OLD_COVERAGE_PATH \
+    $NEW_COVERAGE_PATH \
+    "$CHANGED_FILES_PATH" \
+  > $COVERAGE_COMMENT_PATH
+end_group
 
-echo "::group::Comment on pull request"
+start_group "Comment on pull request"
 COMMENT_ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${GITHUB_PULL_REQUEST_NUMBER}/comments" -q '.[] | select(.user.login=="github-actions[bot]" and (.body | test("Coverage Δ")) ) | .id' | head -n 1)
 if [ -z "$COMMENT_ID" ]; then
   echo "Creating new coverage report comment"
@@ -106,4 +116,4 @@ else
 fi
 
 gh pr comment "$GITHUB_PULL_REQUEST_NUMBER" --body-file=$COVERAGE_COMMENT_PATH
-echo "::endgroup::"
+end_group

@@ -1,5 +1,6 @@
 name: 'Go Unit Test Coverage Report'
 description: 'Add a comment to pull requests which summarizes code coverage results.'
+author: "Friedrich Große"
 
 runs:
   using: "composite"
@@ -11,9 +12,7 @@ runs:
 
     - name: Install go-coverage-report
       shell: bash
-      run: |
-        go install github.com/fgrosse/go-coverage-report@v0.1.0
-        which go-coverage-report
+      run: go install github.com/fgrosse/go-coverage-report@v0.1.0
 
     - name: Determine changed files
       id: changed-files
@@ -35,18 +34,18 @@ runs:
 
     - name: Rename code coverage results file from current run
       shell: bash
-      run: |
-        mv .github/outputs/coverage.txt .github/outputs/new-coverage.txt
+      run: mv .github/outputs/coverage.txt .github/outputs/new-coverage.txt
 
     - name: Download code coverage results from target branch
       shell: bash
       run: |
-        LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch=main --workflow=CI --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
+        TARGET_BRANCH="${{ github.base_ref }}"
+        LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow=CI --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
         if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
-          echo "No successful run found on the target branch"
+          echo "No successful run found on the target branch \"$TARGET_BRANCH\""
           exit 1
         else
-          echo "Last successful run on the target branch: $LAST_SUCCESSFUL_RUN_ID"
+          echo "Last successful run on the target branch \"$TARGET_BRANCH\": $LAST_SUCCESSFUL_RUN_ID"
         fi
 
         gh run download $LAST_SUCCESSFUL_RUN_ID --name=code-coverage --dir=.github/outputs
@@ -55,8 +54,6 @@ runs:
     - name: Compare code coverage results
       shell: bash
       run: |
-        cat .github/outputs/all_changed_files.json
-
         go-coverage-report \
           -prefix=github.com/fgrosse/prioqueue \
           .github/outputs/old-coverage.txt \

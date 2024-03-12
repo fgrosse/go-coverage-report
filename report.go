@@ -121,6 +121,28 @@ func (r *Report) JSON() string {
 	return string(data)
 }
 
+func (r *Report) TrimPrefix(prefix string) {
+	for i, name := range r.ChangedPackages {
+		r.ChangedPackages[i] = trimPrefix(name, prefix)
+	}
+	for i, name := range r.ChangedFiles {
+		r.ChangedFiles[i] = trimPrefix(name, prefix)
+	}
+
+	r.Old.TrimPrefix(prefix)
+	r.New.TrimPrefix(prefix)
+}
+
+func trimPrefix(name, prefix string) string {
+	trimmed := strings.TrimPrefix(name, prefix)
+	trimmed = strings.TrimPrefix(trimmed, "/")
+	if trimmed == "" {
+		trimmed = "."
+	}
+
+	return trimmed
+}
+
 func round(val float64, places int) float64 {
 	if val == 0 {
 		return 0

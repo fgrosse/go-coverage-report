@@ -86,3 +86,11 @@ func (c *Coverage) ByPackage() map[string]*Coverage {
 
 	return pkgCovs
 }
+
+func (c *Coverage) TrimPrefix(prefix string) {
+	for name, cov := range c.Files {
+		delete(c.Files, cov.FileName)
+		cov.FileName = trimPrefix(name, prefix)
+		c.Files[cov.FileName] = cov
+	}
+}

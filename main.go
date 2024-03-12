@@ -32,6 +32,7 @@ OPTIONS:
 
 type options struct {
 	prefix string
+	trim   string
 	format string
 }
 
@@ -44,6 +45,7 @@ func main() {
 	}
 
 	flag.String("prefix", "", "prefix to add to all paths in the JSON file of changed files")
+	flag.String("trim", "", "trim a prefix in the \"Impacted Packages\" column of the markdown report")
 	flag.String("format", "markdown", "output format (currently only 'markdown' is supported)")
 
 	err := run(programArgs())
@@ -66,6 +68,7 @@ func programArgs() (oldCov, newCov, changedFile string, opts options) {
 
 	opts = options{
 		prefix: flag.Lookup("prefix").Value.String(),
+		trim:   flag.Lookup("trim").Value.String(),
 		format: flag.Lookup("format").Value.String(),
 	}
 
@@ -89,6 +92,9 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 	}
 
 	report := NewReport(oldCov, newCov, changedFiles)
+	if opts.trim != "" {
+		report.TrimPrefix(opts.trim)
+	}
 
 	switch strings.ToLower(opts.format) {
 	case "markdown":

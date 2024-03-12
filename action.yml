@@ -12,7 +12,7 @@ runs:
 
     - name: Install go-coverage-report
       shell: bash
-      run: go install github.com/fgrosse/go-coverage-report@v0.1.0
+      run: go install github.com/fgrosse/go-coverage-report@5f897d332e09b79317ab9ae7754d20497fa62e0d
 
     - name: Determine changed files
       id: changed-files

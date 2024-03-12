@@ -2,6 +2,28 @@ name: 'Go Unit Test Coverage Report'
 description: 'Add a comment to pull requests which summarizes code coverage results.'
 author: "Friedrich Große"
 
+inputs:
+  coverage-artifact-name:
+    description: 'The name of the artifact containing the code coverage results'
+    required: true
+    default: 'code-coverage'
+  coverage-file-name:
+    description: 'The name of the file containing the code coverage results'
+    required: true
+    default: 'coverage.txt'
+  prefix:
+    description: |
+      A prefix to add to all paths in the JSON file of changed files.
+      This is useful to map the changed files (e.g., ["foo/my_file.go"] to their
+      coverage profile which uses the full package name to identify the files
+      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently,
+      packages with a different name than their directory are not supported.
+    required: false
+    default: ${{ github.repository }}
+  trim:
+    description: Trim a prefix in the "Impacted Packages" column of the markdown report
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -26,14 +48,14 @@ runs:
           **_test.go
           vendor/**
 
-    - name: Comment on pull request
+    - name: Code coverage report
       shell: bash
       run: $GITHUB_ACTION_PATH/github-action.sh ${{ github.repository }} ${{ github.event.pull_request.number }} ${{ github.run_id }}
       env:
         GITHUB_WORKFLOW: ${{ github.workflow }}
         GITHUB_BASE_REF: ${{ github.base_ref }}
-        COVERAGE_ARTIFACT_NAME: code-coverage
-        COVERAGE_FILE_NAME: coverage.txt
         CHANGED_FILES_PATH: .github/outputs/all_changed_files.json
-        COVERAGE_REPORT_PREFIX: "" # TODO
-        COVERAGE_REPORT_TRIM: "" # TODO
+        COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
+        COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}
+        COVERAGE_REPORT_PREFIX: ${{ inputs.prefix }}
+        COVERAGE_REPORT_TRIM: ${{ inputs.trim }}

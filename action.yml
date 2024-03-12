@@ -26,6 +26,12 @@ runs:
           **_test.go
           vendor/**
 
+    - name: Setup GitHub Path
+      run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+      shell: bash
+      env:
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+
     - name: Comment on pull request
       shell: bash
       run: github-action.sh ${{ github.repository }} ${{ github.event.pull_request.number }} ${{ github.run_id }}

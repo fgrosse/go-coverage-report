@@ -53,10 +53,6 @@ jobs:
     if: github.event_name == 'pull_request' # Do not run when workflow is triggered by push to main branch
     runs-on: ubuntu-latest
     needs: unit_tests # Depends on the artifact uploaded by the "unit_tests" job
-    env:
-      # Export variables used by the GitHub CLI application ("gh")
-      GH_REPO: ${{ github.repository }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: fgrosse/go-coverage-report@v0.2.0 # Consider using a Git revision for maximum security
         with:

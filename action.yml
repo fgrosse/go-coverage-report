@@ -29,6 +29,7 @@ inputs:
 
 runs:
   using: "composite"
+
   steps:
     - name: Setup Go
       uses: actions/setup-go@v4
@@ -55,6 +56,8 @@ runs:
       shell: bash
       run: $GITHUB_ACTION_PATH/github-action.sh ${{ github.repository }} ${{ github.event.pull_request.number }} ${{ github.run_id }}
       env:
+        GH_REPO: ${{ github.repository }}
+        GH_TOKEN: ${{ github.token }}
         GITHUB_WORKFLOW: ${{ github.workflow }}
         GITHUB_BASE_REF: ${{ github.base_ref }}
         CHANGED_FILES_PATH: .github/outputs/all_changed_files.json

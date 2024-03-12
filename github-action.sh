@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+set -e -o pipefail
+
+type gh > /dev/null 2>&1 || { echo >&2 'ERROR: Script requires "gh" (see https://cli.github.com)'; exit 1; }
+type go-coverage-report > /dev/null 2>&1 || { echo >&2 'ERROR: Script requires "go-coverage-report" binary in PATH'; exit 1; }
+
+USAGE="$0: Execute go-coverage-report as GitHub action.
+
+This script is meant to be used as a GitHub action and makes use of Workflow commands as
+described in https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+
+Usage:
+    $0 github_repository github_pull_request_number github_run_id
+
+Example:
+    $0 fgrosse/prioqueue 12 8221109494
+
+You can largely rely on the default environment variables set by GitHub Actions. The script should be invoked like
+this in the workflow file:
+
+    -name: Code coverage report
+     run: github-action.sh \${{ github.repository }} \${{ github.event.pull_request.number }} \${{ github.run_id }}
+     env: …
+
+You can use the following environment variables to configure the script:
+- GITHUB_WORKFLOW: The name of the Workflow (default: CI)
+- GITHUB_BASE_REF: The base branch to compare the coverage results against (default: main)
+- COVERAGE_ARTIFACT_NAME: The name of the artifact containing the code coverage results (default: code-coverage)
+- COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
+- CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_changed_files.json)
+- COVERAGE_REPORT_PREFIX: A prefix to add to all paths in the JSON file of changed files (optional)
+- COVERAGE_REPORT_TRIM: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
+"
+
+if [[ $# != 3 ]]; then
+  echo -e "Error: script requires exactly three arguments\n"
+  echo "$USAGE"
+  exit 1
+fi
+
+if [[ -z ${GITHUB_REPOSITORY+x} ]]; then
+    echo "The GITHUB_REPOSITORY environment variable is missing or empty."
+    exit 1
+fi
+
+if [[ -z ${GITHUB_RUN_ID+x} ]]; then
+    echo "The GITHUB_RUN_ID environment variable is missing or empty."
+    exit 1
+fi
+
+if [[ -z ${GITHUB_PULL_REQUEST_NUMBER+x} ]]; then
+    echo "The GITHUB_PULL_REQUEST_NUMBER environment variable is missing or empty."
+    exit 1
+fi
+
+GITHUB_WORKFLOW=${GITHUB_WORKFLOW:-CI}
+TARGET_BRANCH=${GITHUB_BASE_REF:-main}
+COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
+COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
+
+OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
+NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
+COVERAGE_COMMENT_PATH=.github/outputs/coverage-comment.md
+CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_changed_files.json}
+
+echo "::group::Download code coverage results from current run"
+gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs
+mv ".github/outputs/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH
+echo "::endgroup::"
+
+echo "::group::Download code coverage results from target branch"
+LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
+if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
+  echo "No successful run found on the target branch \"$TARGET_BRANCH\" for workflow \"$GITHUB_WORKFLOW\""
+  exit 1
+else
+  echo "Last successful run on the target branch \"$TARGET_BRANCH\": $LAST_SUCCESSFUL_RUN_ID"
+fi
+
+gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs
+mv ".github/outputs/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
+echo "::endgroup::"
+
+echo "::group::Compare code coverage results"
+go-coverage-report \
+  -prefix="$COVERAGE_REPORT_PREFIX" \
+  -trim="$COVERAGE_REPORT_TRIM" \
+  $OLD_COVERAGE_PATH \
+  $NEW_COVERAGE_PATH \
+  "$CHANGED_FILES_PATH" \
+> $COVERAGE_COMMENT_PATH
+echo "::endgroup::"
+
+echo "::group::Comment on pull request"
+COMMENT_ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${GITHUB_PULL_REQUEST_NUMBER}/comments" -q '.[] | select(.user.login=="github-actions[bot]" and (.body | test("Coverage Δ")) ) | .id' | head -n 1)
+if [ -z "$COMMENT_ID" ]; then
+  echo "Creating new coverage report comment"
+else
+  echo "Replacing old coverage report comment (ID: $COMMENT_ID)"
+  gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/comments/${COMMENT_ID}"
+fi
+
+gh pr comment "$GITHUB_PULL_REQUEST_NUMBER" --body-file=$COVERAGE_COMMENT_PATH
+echo "::endgroup::"

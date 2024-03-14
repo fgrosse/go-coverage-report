@@ -40,7 +40,7 @@ jobs:
       # coverage profile to a file. You will need the name of the file (e.g. "coverage.txt")
       # in the next step as well as the next job.
       - name: Test
-        run: go test -v -cover -coverprofile=coverage.txt -covermode=count -mod=readonly ./...
+        run: go test -cover -coverprofile=coverage.txt ./...
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
@@ -99,7 +99,7 @@ jobs:
           go-version: ^1.22
 
       - name: Test
-        run: go test -v -cover -coverprofile=coverage.txt -covermode=count -mod=readonly ./...
+        run: go test -cover -coverprofile=coverage.txt ./...
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4

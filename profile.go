@@ -22,12 +22,13 @@ import (
 
 // Profile represents the profiling data for a specific file.
 type Profile struct {
-	FileName     string `json:"-"`
-	Mode         string
-	TotalLines   int64
-	CoveredLines int64
-	MissedLines  int64
-	Blocks       []ProfileBlock `json:"-"`
+	FileName string `json:"-"`
+	Mode     string
+	Blocks   []ProfileBlock `json:"-"`
+
+	TotalStmt   int64
+	CoveredStmt int64
+	MissedStmt  int64
 }
 
 // ProfileBlock represents a single block of profiling data.
@@ -117,13 +118,13 @@ func ParseProfilesFromReader(rd io.Reader) ([]*Profile, error) {
 		}
 
 		for _, b := range p.Blocks {
-			p.TotalLines += int64(b.NumStmt)
+			p.TotalStmt += int64(b.NumStmt)
 			if b.Count > 0 {
 				// If we got at least a single hit in this block we say it was covered
-				p.CoveredLines += int64(b.NumStmt)
+				p.CoveredStmt += int64(b.NumStmt)
 			}
 		}
-		p.MissedLines = p.TotalLines - p.CoveredLines
+		p.MissedStmt = p.TotalStmt - p.CoveredStmt
 
 		p.Blocks = p.Blocks[:j]
 	}

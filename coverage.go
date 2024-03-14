@@ -8,10 +8,10 @@ import (
 )
 
 type Coverage struct {
-	Files        map[string]*Profile
-	TotalLines   int64
-	CoveredLines int64
-	MissedLines  int64
+	Files       map[string]*Profile
+	TotalStmt   int64
+	CoveredStmt int64
+	MissedStmt  int64
 }
 
 func ParseCoverage(filename string) (*Coverage, error) {
@@ -44,17 +44,17 @@ func (c *Coverage) add(p *Profile) {
 	}
 
 	c.Files[p.FileName] = p
-	c.TotalLines += p.TotalLines
-	c.CoveredLines += p.CoveredLines
-	c.MissedLines += p.MissedLines
+	c.TotalStmt += p.TotalStmt
+	c.CoveredStmt += p.CoveredStmt
+	c.MissedStmt += p.MissedStmt
 }
 
 func (c *Coverage) Percent() float64 {
-	if c.TotalLines == 0 {
+	if c.TotalStmt == 0 {
 		return 0
 	}
 
-	return float64(c.CoveredLines) / float64(c.TotalLines) * 100
+	return float64(c.CoveredStmt) / float64(c.TotalStmt) * 100
 }
 
 func (c *Coverage) ByPackage() map[string]*Coverage {

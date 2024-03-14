@@ -13,12 +13,12 @@ inputs:
     required: true
     default: "coverage.txt"
 
-  prefix:
+  repo-import-path:
     description: |
-      A prefix to add to all paths in the JSON file of changed files.
-      This is useful to map the changed files (e.g., ["foo/my_file.go"] to their
-      coverage profile which uses the full package name to identify the files
-      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently,
+      The Go import path of the tested repository to add as a prefix to all paths of the
+      changed files. This is useful to map the changed files (e.g., ["foo/my_file.go"]
+      to their coverage profile which uses the full package name to identify the files
+      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently, 
       packages with a different name than their directory are not supported.
     required: false
     default: "github.com/${{ github.repository }}"
@@ -63,5 +63,5 @@ runs:
         CHANGED_FILES_PATH: .github/outputs/all_changed_files.json
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
         COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}
-        COVERAGE_REPORT_PREFIX: ${{ inputs.prefix }}
+        REPOSITORY_IMPORT_PATH: ${{ inputs.repo-import-path }}
         COVERAGE_REPORT_TRIM: ${{ inputs.trim }}

@@ -177,12 +177,12 @@ jobs:
           mv .github/outputs/coverage.txt .github/outputs/old-coverage.txt
 
       # Finally we compare the code coverage results and create our code coverage report.
-      # You need to adjust the "prefix" flag to match the import path of your package.
+      # You need to adjust the "root-pkg" flag to match the import path of your package.
       # For more information see the usage of the "go-coverage-report" tool.
       - name: Compare code coverage results
         run: |
           go-coverage-report \
-            -prefix=github.com/fgrosse/prioqueue \
+            -root-pkg=github.com/fgrosse/prioqueue \
             .github/outputs/old-coverage.txt \
             .github/outputs/new-coverage.txt \
             .github/outputs/all_changed_files.json \

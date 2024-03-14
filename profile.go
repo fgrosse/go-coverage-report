@@ -268,6 +268,34 @@ func (p *Profile) Boundaries(src []byte) (boundaries []Boundary) {
 	return
 }
 
+func (p *Profile) CoveragePercent() float64 {
+	if p == nil || p.TotalStmt == 0 {
+		return 0
+	}
+	return float64(p.CoveredStmt) / float64(p.TotalStmt) * 100
+}
+
+func (p *Profile) GetTotal() int64 {
+	if p == nil {
+		return 0
+	}
+	return p.TotalStmt
+}
+
+func (p *Profile) GetCovered() int64 {
+	if p == nil {
+		return 0
+	}
+	return p.CoveredStmt
+}
+
+func (p *Profile) GetMissed() int64 {
+	if p == nil {
+		return 0
+	}
+	return p.MissedStmt
+}
+
 type boundariesByPos []Boundary
 
 func (b boundariesByPos) Len() int      { return len(b) }

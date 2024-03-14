@@ -16,6 +16,7 @@ type Report struct {
 }
 
 func NewReport(oldCov, newCov *Coverage, changedFiles []string) *Report {
+	sort.Strings(changedFiles)
 	return &Report{
 		Old:             oldCov,
 		New:             newCov,
@@ -109,7 +110,68 @@ func (r *Report) Markdown() string {
 		)
 	}
 
+	report.WriteString("\n")
+	r.addDetails(report)
+
 	return report.String()
+}
+
+func (r *Report) addDetails(report *strings.Builder) {
+	fmt.Fprintln(report, "---")
+	fmt.Fprintln(report)
+	fmt.Fprintln(report, "<details>")
+	fmt.Fprintln(report)
+
+	fmt.Fprintln(report, "<summary>Coverage by file</summary>")
+	fmt.Fprintln(report)
+
+	fmt.Fprintln(report, "| File | Coverage Δ | Total | Covered | Missed | :robot: |")
+	fmt.Fprintln(report, "|------|------------|------------------|---------|--------|---------|")
+
+	for _, name := range r.ChangedFiles {
+		var oldPercent, newPercent float64
+
+		oldProfile := r.Old.Files[name]
+		newProfile := r.New.Files[name]
+
+		if oldProfile != nil {
+			oldPercent = oldProfile.CoveragePercent()
+		}
+
+		if newProfile != nil {
+			newPercent = newProfile.CoveragePercent()
+		}
+
+		valueWithDelta := func(oldVal, newVal int64) string {
+			diff := oldVal - newVal
+			switch {
+			case diff < 0:
+				return fmt.Sprintf("%d (+%d)", newVal, -diff)
+			case diff > 0:
+				return fmt.Sprintf("%d (-%d)", newVal, diff)
+			default:
+				return fmt.Sprintf("%d", newVal)
+			}
+		}
+
+		emoji, diffStr := emojiScore(newPercent, oldPercent)
+		fmt.Fprintf(report, "| %s | %.2f%% (%s) | %s | %s | %s | %s |\n",
+			name,
+			newPercent, diffStr,
+			valueWithDelta(oldProfile.GetTotal(), newProfile.GetTotal()),
+			valueWithDelta(oldProfile.GetCovered(), newProfile.GetCovered()),
+			valueWithDelta(oldProfile.GetMissed(), newProfile.GetMissed()),
+			emoji,
+		)
+	}
+
+	fmt.Fprintln(report)
+	fmt.Fprintln(report, `_Please note that the "Total", "Covered", and "Missed" counts `+
+		"above refer to ***code statements*** instead of lines of code. The value in brackets "+
+		"refers to the test coverage of that file in the old version of the code._")
+	fmt.Fprintln(report)
+
+	fmt.Fprint(report, "</details>")
 }
 
 func (r *Report) JSON() string {

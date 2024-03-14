@@ -125,8 +125,8 @@ func (r *Report) addDetails(report *strings.Builder) {
 	fmt.Fprintln(report, "<summary>Coverage by file</summary>")
 	fmt.Fprintln(report)
 
-	fmt.Fprintln(report, "| File | Coverage Δ | Total | Covered | Missed | :robot: |")
-	fmt.Fprintln(report, "|------|------------|------------------|---------|--------|---------|")
+	fmt.Fprintln(report, "| Changed File | Coverage Δ | Total | Covered | Missed | :robot: |")
+	fmt.Fprintln(report, "|--------------|------------|-------|---------|--------|---------|")
 
 	for _, name := range r.ChangedFiles {
 		var oldPercent, newPercent float64

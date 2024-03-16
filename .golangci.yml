@@ -1,0 +1,10 @@
+linters:
+  disable-all: true
+  enable:
+    - gosimple    # Linter for Go source code that specializes in simplifying a code
+    - gofmt       # Gofmt checks whether code was gofmt-ed. By default, this tool runs with -s option to check for code simplification
+    - govet       # Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
+    - ineffassign # Detects when assignments to existing variables are not used
+    - misspell    # Finds commonly misspelled English words in comments
+    - unconvert   # Remove unnecessary type conversions
+    - unused      # Checks Go code for unused constants, variables, functions and types

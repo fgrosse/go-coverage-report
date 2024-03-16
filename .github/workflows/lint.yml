@@ -1,0 +1,60 @@
+name: Lint
+on:
+  push:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+  pull_request:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  GO_VERSION: "^1.22"
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Verify dependencies
+        run: |
+          go mod verify
+          go mod download
+
+      - name: Go mod tidy
+        run: |
+          go mod tidy
+          if ! diff="$(git diff -U1 --color --exit-code)"; then
+            printf '\e[31mError: running `\e[1m%s\e[22m` results in modifications that you must check into version control:\e[0m\n%s\n\n' "go mod tidy" "$diff" >&2
+            exit 1
+          fi
+
+  golang-ci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.56
+          install-mode: "binary"

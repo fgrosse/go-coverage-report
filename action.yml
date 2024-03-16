@@ -59,6 +59,8 @@ runs:
           ARCH="amd64"
         fi
         
+        mkdir -p .github/outputs
+        
         RUNNER_OS=$(echo '${{ runner.os }}' | tr '[:upper:]' '[:lower:]')
         FILENAME="go-coverage-report-${VERSION}-${RUNNER_OS}-${ARCH}.tar.gz"    
         URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/${FILENAME}"

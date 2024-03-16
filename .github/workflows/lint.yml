@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: read
-  checks: write
 
 env:
   GO_VERSION: "^1.22"
@@ -47,6 +46,8 @@ jobs:
   golang-ci:
     name: lint
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -58,3 +59,18 @@ jobs:
         with:
           version: v1.56
           install-mode: "binary"
+
+  shell-check:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Repository checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Differential ShellCheck
+        uses: redhat-plumbers-in-action/differential-shellcheck@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

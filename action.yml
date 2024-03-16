@@ -4,15 +4,12 @@ author: "Friedrich Große"
 
 inputs:
   version:
-    description: |
-      The version of the go-coverage-report tool to use.
-      This can either be the string "latest", a tag (e.g., "v1.2.3"),
-      a Git branch (e.g., "main") or a specific Git commit hash.
+    description: 'The version of the go-coverage-report tool to use.'
     required: true
     default: "v0.3.3"
 
   sha256sum:
-    description: 'Expected SHA256 checksum of the tarball.'
+    description: 'Expected SHA256 checksum of the tarball when downloading the go-coverage-report binary.'
     required: false
 
   coverage-artifact-name:
@@ -83,15 +80,6 @@ runs:
         tar -xzf .github/outputs/$FILENAME -C .github/outputs/ go-coverage-report
         rm .github/outputs/$FILENAME
         sudo mv .github/outputs/go-coverage-report /usr/bin 
-
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ inputs.go-version }}
-
-    - name: Install go-coverage-report
-      shell: bash
-      run: go install github.com/fgrosse/go-coverage-report@${{ inputs.version }}
 
     - name: Determine changed files
       id: changed-files

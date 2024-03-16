@@ -78,6 +78,8 @@ end_group(){
     echo "::endgroup::"
 }
 
+echo GITHUB_REPOSITORY: $GITHUB_REPOSITORY
+
 start_group "Download code coverage results from current run"
 gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs
 mv ".github/outputs/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH

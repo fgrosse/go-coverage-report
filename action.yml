@@ -4,7 +4,7 @@ author: "Friedrich Große"
 
 inputs:
   version:
-    description: 'The version of the go-coverage-report tool to use.'
+    description: 'The exact version of the go-coverage-report tool to use.'
     required: true
     default: "v0.3.3"
 

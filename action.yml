@@ -63,7 +63,7 @@ runs:
         fi
         
         RUNNER_OS=$(echo '${{ runner.os }}' | tr '[:upper:]' '[:lower:]')
-        FILENAME="go-coverage-report_${VERSION}_${RUNNER_OS}_${ARCH}.tar.gz"    
+        FILENAME="go-coverage-report-${VERSION}-${RUNNER_OS}-${ARCH}.tar.gz"    
         URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/${FILENAME}"
         curl --fail --location "$URL" --output .github/outputs/$FILENAME
         

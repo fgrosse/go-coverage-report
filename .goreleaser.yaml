@@ -14,11 +14,7 @@ builds:
 
 archives:
   - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}-
-      {{- .Version }}-
-      {{- title .Os | tolower }}-
-      {{- .Arch }}
+    name_template: '{{ .ProjectName }}-v{{ .Version }}-{{ title .Os | tolower }}-{{- .Arch }}'
     format_overrides:
       - goos: windows
         format: zip

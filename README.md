@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit_tests # Depends on the artifact uploaded by the "unit_tests" job
     steps:
-      - uses: fgrosse/go-coverage-report@v0.2.0 # Consider using a Git revision for maximum security
+      - uses: fgrosse/go-coverage-report@v0.3.3 # Consider using a Git revision for maximum security
         with:
           coverage-artifact-name: "code-coverage"
           coverage-file-name: "coverage.txt"

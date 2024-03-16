@@ -276,7 +276,6 @@ func (p *Profile) CoveragePercent() float64 {
 }
 
 func (p *Profile) GetTotal() int64 {
-	// "langauge" is a misspelling of "language"
 	if p == nil {
 		return 0
 	}

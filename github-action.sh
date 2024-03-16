@@ -104,6 +104,11 @@ go-coverage-report \
   > $COVERAGE_COMMENT_PATH
 end_group
 
+if [ ! -s $COVERAGE_COMMENT_PATH ]; then
+  echo "::notice::No coverage report to comment"
+  exit 0
+fi
+
 start_group "Comment on pull request"
 COMMENT_ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${GITHUB_PULL_REQUEST_NUMBER}/comments" -q '.[] | select(.user.login=="github-actions[bot]" and (.body | test("Coverage Δ")) ) | .id' | head -n 1)
 if [ -z "$COMMENT_ID" ]; then

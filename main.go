@@ -91,6 +91,11 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 		return fmt.Errorf("failed to load changed files: %w", err)
 	}
 
+	if len(changedFiles) == 0 {
+		log.Println("Skipping report since there are no changed files")
+		return nil
+	}
+
 	report := NewReport(oldCov, newCov, changedFiles)
 	if opts.trim != "" {
 		report.TrimPrefix(opts.trim)

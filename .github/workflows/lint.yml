@@ -35,7 +35,7 @@ jobs:
         run: |
           go mod tidy
           if ! diff="$(git diff -U1 --color --exit-code)"; then
-            printf '\e[31mError: running `\e[1m%s\e[22m` results in modifications that you must check into version control:\e[0m\n%s\n\n' "go mod tidy" "$diff" >&2
+            printf '::error title="go mod tidy results in modifications"::Running `%s` results in modifications that you must check into version control:\n%s\n\n' "go mod tidy" "$diff"
             exit 1
           fi
 

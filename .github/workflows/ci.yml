@@ -34,8 +34,11 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs: unit_tests
+    permissions:
+      # Grant permission to add comments to the PR.
+      pull-requests: write
     steps:
-      # Normally,users of the action don't have to checkout the source code.
+      # Normally,users of the action don't have to check out the source code.
       # We need this here however because we are using a local action.yml.
       - name: Checkout repository
         uses: actions/checkout@v4

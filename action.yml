@@ -9,7 +9,7 @@ inputs:
       This can either be the string "latest", a tag (e.g., "v1.2.3"),
       a Git branch (e.g., "main") or a specific Git commit hash.
     required: true
-    default: "v0.3.0"
+    default: "v0.3.1"
 
   sha256sum:
     description: 'Expected SHA256 checksum of the tarball.'

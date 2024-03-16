@@ -65,11 +65,13 @@ runs:
         RUNNER_OS=$(echo '${{ runner.os }}' | tr '[:upper:]' '[:lower:]')
         FILENAME="go-coverage-report-${VERSION}-${RUNNER_OS}-${ARCH}.tar.gz"    
         URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/${FILENAME}"
+        echo "Downloading \"$FILENAME\" from \"$URL\""
         curl --fail --location "$URL" --output .github/outputs/$FILENAME
         
         if ! [[ "$SHA256SUM" ]] ; then
           URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/checksums.txt"
           cd .github/outputs
+          echo "Downloading checksums from \"$URL\""
           curl -fsSL "$URL" | sha256sum --check --ignore-missing
           cd -
         else

@@ -40,7 +40,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - uses: .
+      - uses: ./
         with:
           coverage-artifact-name: "code-coverage"
           coverage-file-name: "coverage.txt"

@@ -38,7 +38,7 @@ The following emojis are used:
 * :tada: - The coverage of the package increased by <= 20%
 * :thumbsup: - The coverage of the package increased by <= 10%
 * :thumbsdown: - The coverage of the package decreased by <= 10%
-* :skull: - The coverage of the package decreased by > 10%, every 10% add another skull (up to five :skull: :skull: :skull: :skull: :skull:)
+* :skull: - The coverage of the package decreased by > 10%, every 10% add another skull (up to five skulls)
 
 ## Usage
 

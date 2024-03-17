@@ -8,11 +8,37 @@
 
 --- 
 
-`go-coverage-report` is a command line tool that reads code coverage profiles
-and a set of changed files to create a markdown report that can be used as a
-comment to a pull request. This is useful to automatically report code coverage
-changes to your pull requests without having to use any third-party services
-like Codecov or Coveralls.
+`go-coverage-report` is a **command line tool** and a **GitHub Action** that
+parses code coverage results to create a tabular code coverage report. This
+markdown report is intended as pull request comment both to highlight the
+impact of the changes on the code coverage on all updated packages and to 
+motivate the contributors to write tests for their code.
+
+The provided tool and GitHub Action work without any third-party services
+which makes them fast, secure and very easy-to-setup in your own CI/CD pipeline.
+
+## Example
+
+Example of a pull request comment created by `go-coverage-report`:
+
+![Example of a pull request comment created by go-coverage-report](screenshot.png)
+
+Please note that by default, the "Coverage by file" section is collapsed so the focus
+is more on the overall impact on the coverage _per package_.
+
+There is no indicator of the _total_ coverage of the project because the impact by
+changed package is typically a better indicator of the quality of the changes.
+Additionally, looking at coverage changes by package is more motivating as code coverage improvements are more pronounced (i.e. typically larger percentage values) when zooming
+into the package level, instead of comparing changes on the project level.
+
+The last column is an emoji "score" that is based on the coverage change of the package.
+The following emojis are used:
+
+* :star2: - The coverage of the package increased by > 20%
+* :tada: - The coverage of the package increased by <= 20%
+* :thumbsup: - The coverage of the package increased by <= 10%
+* :thumbsdown: - The coverage of the package decreased by <= 10%
+* :skull: - The coverage of the package decreased by > 10%, every 10% add another skull (up to five :skull: :skull: :skull: :skull: :skull:)
 
 ## Usage
 

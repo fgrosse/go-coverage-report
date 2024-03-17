@@ -1,8 +1,23 @@
-# Go Coverage Report GitHub action
+<h1 align="center">Go Coverage Report</h1>
+<p align="center">A CLI tool and GitHub Action to post Go code coverage reports as comment to your pull requests.</p>
+<p align="center">
+    <a href="https://github.com/fgrosse/go-coverage-report/releases"><img src="https://img.shields.io/github/tag/fgrosse/go-coverage-report.svg?label=version&color=brightgreen"></a>
+    <a href="https://github.com/fgrosse/go-coverage-report/actions/workflows/ci.yml"><img src="https://github.com/fgrosse/go-coverage-report/actions/workflows/ci.yml/badge.svg"></a>
+    <a href="https://github.com/fgrosse/go-coverage-report/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-BSD--3--Clause-blue.svg"></a>
+</p>
+
+--- 
+
+`go-coverage-report` is a command line tool that reads code coverage profiles
+and a set of changed files to create a markdown report that can be used as a
+comment to a pull request. This is useful to automatically report code coverage
+changes to your pull requests without having to use any third-party services
+like Codecov or Coveralls.
 
 ## Usage
 
-The `go-coverage-report` tool ships with a GitHub Action that you can easily include in your own Workflows:
+The `go-coverage-report` tool ships with a **GitHub Action** that you can easily
+include in your own Workflows:
 
 ```yaml
 name: CI
@@ -61,3 +76,87 @@ jobs:
           coverage-artifact-name: "code-coverage" # can be omitted if you used this default value
           coverage-file-name: "coverage.txt" # can be omitted if you used this default value
 ```
+
+
+### Inputs
+
+<!-- Could use embedmd like this: [embedmd]:# (action.yml yaml /inputs:/ /# end of inputs/) -->
+```yaml
+inputs:
+  version:
+    description: 'The exact version of the go-coverage-report tool to use.'
+    required: true
+    default: "v0.4.0"
+
+  sha256sum:
+    description: 'Expected SHA256 checksum of the tarball when downloading the go-coverage-report binary.'
+    required: false
+
+  coverage-artifact-name:
+    description: 'The name of the artifact containing the code coverage results.'
+    required: true
+    default: "code-coverage"
+
+  coverage-file-name:
+    description: 'The name of the file containing the code coverage results.'
+    required: true
+    default: "coverage.txt"
+
+  repo-import-path:
+    description: |
+      The Go import path of the tested repository to add as a prefix to all paths of the
+      changed files. This is useful to map the changed files (e.g., ["foo/my_file.go"]
+      to their coverage profile which uses the full package name to identify the files
+      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently, 
+      packages with a different name than their directory are not supported.
+    required: false
+    default: "github.com/${{ github.repository }}"
+
+  trim:
+    description: Trim a prefix in the "Impacted Packages" column of the markdown report.
+    required: false
+```
+
+### Outputs
+
+This action does not provide any outputs, but it will comment on your pull request
+with the summary of the code coverage changes.
+
+## Limitations
+
+- Currently, code coverage profiles are uploaded as GitHub artifacts which automatically expire after 90 days.
+  In a repository which receives changes only infrequently, this might lead to issues when trying to compare
+  the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).  
+- Packages with a name that differs from their directory on disk are not supported yet.
+
+## Built With
+
+* [tj-actions/changed-files](https://github.com/tj-actions/changed-files) - A GitHub Action to get the list of changed files in pull requests
+* [pkg/errors](https://github.com/pkg/errors) - Simple error handling primitives
+* [testify](https://github.com/stretchr/testify) - A simple unit test library
+* _[and more][built-with]_
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of
+conduct and on the process for submitting pull requests to this repository.
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning.
+All significant (e.g. breaking) changes are documented in the [CHANGELOG.md](CHANGELOG.md).
+A list of all available versions can be found at the [releases page][releases].
+
+## Authors
+
+- **Friedrich Große** - *Initial work* - [fgrosse](https://github.com/fgrosse)
+
+- See also the list of [contributors][contributors] who participated in this project.
+
+## License
+
+This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICENSE) file for details.
+
+[releases]: https://github.com/fgrosse/go-coverage-report/release
+[contributors]: https://github.com/fgrosse/go-coverage-report/contributors
+[built-with]: go.mod

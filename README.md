@@ -13,7 +13,7 @@ name: CI
 # when new code is pushed to the branch of the pull request. In addition, you also
 # need to trigger this workflow when new code is pushed to the main branch because 
 # we need to upload the code coverage results as artifact for the main branch as
-# well because it will be the baseline code coverage.
+# well since it will be the baseline code coverage.
 # 
 # We do not want to trigger the workflow for pushes to *any* branch because this
 # would trigger our jobs twice on pull requests (once from "push" event and once
@@ -56,8 +56,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit_tests # Depends on the artifact uploaded by the "unit_tests" job
     steps:
-      - uses: fgrosse/go-coverage-report@v0.3.3 # Consider using a Git revision for maximum security
+      - uses: fgrosse/go-coverage-report@v0.4.0 # Consider using a Git revision for maximum security
         with:
-          coverage-artifact-name: "code-coverage"
-          coverage-file-name: "coverage.txt"
+          coverage-artifact-name: "code-coverage" # can be omitted if you used this default value
+          coverage-file-name: "coverage.txt" # can be omitted if you used this default value
 ```

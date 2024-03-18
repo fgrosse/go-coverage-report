@@ -63,3 +63,4 @@ jobs:
           coverage-file-name: "coverage.txt"
           version: "v0.4.0"
           sha256sum: "33b08bab2fcedd7aec47b848b1bf9eb43b76e2b18628b36c34d4842152ce0775"
+          trim: "github.com/fgrosse/go-coverage-report/"

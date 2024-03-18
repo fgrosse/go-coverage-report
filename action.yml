@@ -50,6 +50,8 @@ runs:
         VERSION: ${{ inputs.version }}
         SHA256SUM: ${{ inputs.sha256sum }}
       run: |
+        set -e -o pipefail
+        
         if [ ${{ runner.arch }} = "ARM64" ]; then
           ARCH="arm64"
         elif [ ${{ runner.arch }} = "ARM" ]; then

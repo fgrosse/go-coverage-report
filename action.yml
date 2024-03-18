@@ -1,6 +1,9 @@
 name: 'Go Unit Test Coverage Report'
-description: 'Add a comment to pull requests which summarizes Go code coverage results.'
+description: 'Post Go code coverage reports to pull requests.'
 author: "Friedrich Große"
+branding:
+  icon: 'umbrella'
+  color: 'blue'
 
 inputs:
   version:

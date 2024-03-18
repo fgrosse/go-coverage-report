@@ -57,6 +57,20 @@ end_group(){
     echo "::endgroup::"
 }
 
+if [[ $VERSION == "local" ]]; then
+  start_group "Installing go-coverage-report from local source"
+  go install -v ./cmd/go-coverage-report
+  end_group
+  exit 0
+fi
+
+if [[ ${#VERSION} == 40 ]]; then
+  start_group "Installing go-coverage-report from remote source"
+  go install -v "github.com/fgrosse/go-coverage-report@$VERSION"
+  end_group
+  exit 0
+fi
+
 start_group "Determining runner architecture"
 if [ "$RUNNER_ARCH" = "ARM64" ]; then
   ARCH="arm64"

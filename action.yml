@@ -46,47 +46,10 @@ runs:
     - name: Download go-coverage-report
       shell: bash
       id: download
+      run: $GITHUB_ACTION_PATH/scripts/download-cli-tool.sh "${{ inputs.version }}" "${{ inputs.sha256sum }}"
       env:
-        VERSION: ${{ inputs.version }}
-        SHA256SUM: ${{ inputs.sha256sum }}
-      run: |
-        set -e -o pipefail
-        
-        if [ ${{ runner.arch }} = "ARM64" ]; then
-          ARCH="arm64"
-        elif [ ${{ runner.arch }} = "ARM" ]; then
-          ARCH="arm"
-        elif [ ${{ runner.arch }} = "X86" ]; then
-          ARCH="386"
-        elif [ ${{ runner.arch }} = "X64" ]; then
-          ARCH="amd64"
-        else
-          ARCH="amd64"
-        fi
-        
-        mkdir -p .github/outputs
-        
-        RUNNER_OS=$(echo '${{ runner.os }}' | tr '[:upper:]' '[:lower:]')
-        FILENAME="go-coverage-report-${VERSION}-${RUNNER_OS}-${ARCH}.tar.gz"    
-        URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/${FILENAME}"
-        echo "Downloading \"$FILENAME\" from \"$URL\""
-        curl --fail --location "$URL" --output .github/outputs/$FILENAME
-        
-        if ! [[ "$SHA256SUM" ]] ; then
-          URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/checksums.txt"
-          cd .github/outputs
-          echo "Downloading checksums from \"$URL\""
-          curl -fsSL "$URL" | sha256sum --check --ignore-missing
-          cd -
-        else
-          echo "Expected sha256: $SHA256SUM"
-          echo "Actual sha256: $(sha256sum .github/outputs/go-coverage-report.tar.gz)"
-          echo "$SHA256SUM  .github/outputs/$FILENAME" | sha256sum -c  
-        fi
-        
-        tar -xzf .github/outputs/$FILENAME -C .github/outputs/ go-coverage-report
-        rm .github/outputs/$FILENAME
-        sudo mv .github/outputs/go-coverage-report /usr/bin 
+        RUNNER_OS: ${{ runner.os }}
+        RUNNER_ARCH: ${{ runner.arch }}
 
     - name: Determine changed files
       id: changed-files
@@ -102,7 +65,7 @@ runs:
 
     - name: Code coverage report
       shell: bash
-      run: $GITHUB_ACTION_PATH/github-action.sh ${{ github.repository }} ${{ github.event.pull_request.number }} ${{ github.run_id }}
+      run: $GITHUB_ACTION_PATH/scripts/github-action.sh "${{ github.repository }}" "${{ github.event.pull_request.number }}" "${{ github.run_id }}"
       env:
         GH_REPO: ${{ github.repository }}
         GH_TOKEN: ${{ github.token }}

@@ -1,4 +1,3 @@
-// Package coverage contains code to parse and format code coverage profiles.
 package main
 
 import (

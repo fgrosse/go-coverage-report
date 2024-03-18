@@ -7,6 +7,9 @@ on:
     branches:
       - 'main'
 
+env:
+  GO_VERSION: "^1.22"
+
 jobs:
   unit_tests:
     name: "Unit tests"
@@ -18,7 +21,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ^1.22
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Restore Go modules cache
         uses: actions/cache@v4
@@ -52,12 +55,16 @@ jobs:
       # Grant permission to add comments to the PR.
       pull-requests: write
     steps:
-      # Normally,users of the action don't have to check out the source code.
+      # Normally,users of the action don't have to check out the source code or setup Go.
       # We need this here however because we are using a local action.yml.
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
       - uses: ./
         with:
-          coverage-artifact-name: "code-coverage"
-          coverage-file-name: "coverage.txt"
+          version: local
+          trim: "github.com/fgrosse/go-coverage-report/"

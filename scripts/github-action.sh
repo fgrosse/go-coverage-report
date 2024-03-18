@@ -29,8 +29,8 @@ You can use the following environment variables to configure the script:
 - COVERAGE_ARTIFACT_NAME: The name of the artifact containing the code coverage results (default: code-coverage)
 - COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_changed_files.json)
-- REPOSITORY_IMPORT_PATH: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
-- COVERAGE_REPORT_TRIM: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
+- ROOT_PACKAGE: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
+- TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
 "
 
 if [[ $# != 3 ]]; then
@@ -96,10 +96,10 @@ end_group
 
 start_group "Compare code coverage results"
 go-coverage-report \
-    -root-pkg="$REPOSITORY_IMPORT_PATH" \
-    -trim="$COVERAGE_REPORT_TRIM" \
-    $OLD_COVERAGE_PATH \
-    $NEW_COVERAGE_PATH \
+    -root="$ROOT_PACKAGE" \
+    -trim="$TRIM_PACKAGE" \
+    "$OLD_COVERAGE_PATH" \
+    "$NEW_COVERAGE_PATH" \
     "$CHANGED_FILES_PATH" \
   > $COVERAGE_COMMENT_PATH
 end_group

@@ -16,7 +16,7 @@ Parse the OLD_COVERAGE_FILE and NEW_COVERAGE_FILE and compare the coverage of th
 files listed in CHANGED_FILES_FILE. The result is printed to stdout as a simple
 Markdown table with emojis indicating the coverage change per package.
 
-You can use the -root-pkg flag to add a prefix to all paths in the list of changed
+You can use the -root flag to add a prefix to all paths in the list of changed
 files. This is useful to map the changed files (e.g., ["foo/my_file.go"] to their
 coverage profile which uses the full package name to identify the files
 (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently,
@@ -31,9 +31,9 @@ OPTIONS:
 `, filepath.Base(os.Args[0])))
 
 type options struct {
-	rootPkg string
-	trim    string
-	format  string
+	root   string
+	trim   string
+	format string
 }
 
 func main() {
@@ -44,7 +44,7 @@ func main() {
 		flag.PrintDefaults()
 	}
 
-	flag.String("root-pkg", "", "The import path of the tested repository to add as prefix to all paths of the changed files")
+	flag.String("root", "", "The import path of the tested repository to add as prefix to all paths of the changed files")
 	flag.String("trim", "", "trim a prefix in the \"Impacted Packages\" column of the markdown report")
 	flag.String("format", "markdown", "output format (currently only 'markdown' is supported)")
 
@@ -67,9 +67,9 @@ func programArgs() (oldCov, newCov, changedFile string, opts options) {
 	}
 
 	opts = options{
-		rootPkg: flag.Lookup("root-pkg").Value.String(),
-		trim:    flag.Lookup("trim").Value.String(),
-		format:  flag.Lookup("format").Value.String(),
+		root:   flag.Lookup("root").Value.String(),
+		trim:   flag.Lookup("trim").Value.String(),
+		format: flag.Lookup("format").Value.String(),
 	}
 
 	return args[0], args[1], args[2], opts
@@ -86,7 +86,7 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 		return fmt.Errorf("failed to parse new coverage: %w", err)
 	}
 
-	changedFiles, err := ParseChangedFiles(changedFilesPath, opts.rootPkg)
+	changedFiles, err := ParseChangedFiles(changedFilesPath, opts.root)
 	if err != nil {
 		return fmt.Errorf("failed to load changed files: %w", err)
 	}

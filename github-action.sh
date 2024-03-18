@@ -96,7 +96,7 @@ end_group
 
 start_group "Compare code coverage results"
 go-coverage-report \
-    -root-pkg="$REPOSITORY_IMPORT_PATH" \
+    -root="$REPOSITORY_IMPORT_PATH" \
     -trim="$TRIM_PACKAGE" \
     "$OLD_COVERAGE_PATH" \
     "$NEW_COVERAGE_PATH" \

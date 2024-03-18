@@ -115,7 +115,7 @@ inputs:
     default: "v1.0.0"
 
   sha256sum:
-    description: 'Expected SHA256 checksum of the tarball when downloading the go-coverage-report binary.'
+    description: 'Optional SHA256 checksum of the tarball when downloading the go-coverage-report binary.'
     required: false
 
   coverage-artifact-name:
@@ -128,7 +128,7 @@ inputs:
     required: true
     default: "coverage.txt"
 
-  repo-import-path:
+  root-package:
     description: |
       The Go import path of the tested repository to add as a prefix to all paths of the
       changed files. This is useful to map the changed files (e.g., ["foo/my_file.go"]

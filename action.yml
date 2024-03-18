@@ -110,4 +110,4 @@ runs:
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
         COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}
         REPOSITORY_IMPORT_PATH: ${{ inputs.repo-import-path }}
-        COVERAGE_REPORT_TRIM: ${{ inputs.trim }}
+        TRIM_PACKAGE: ${{ inputs.trim }}

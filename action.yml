@@ -9,7 +9,7 @@ inputs:
   version:
     description: 'The exact version of the go-coverage-report tool to use.'
     required: true
-    default: "v0.4.0"
+    default: "v1.0.0"
 
   sha256sum:
     description: 'Expected SHA256 checksum of the tarball when downloading the go-coverage-report binary.'

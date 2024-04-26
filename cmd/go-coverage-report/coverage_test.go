@@ -8,7 +8,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	cov, err := ParseCoverage("testdata/new-coverage.txt")
+	cov, err := ParseCoverage("testdata/01-new-coverage.txt")
 	require.NoError(t, err)
 
 	assert.EqualValues(t, 102, cov.TotalStmt)
@@ -18,7 +18,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestCoverage_ByPackage(t *testing.T) {
-	cov, err := ParseCoverage("testdata/new-coverage.txt")
+	cov, err := ParseCoverage("testdata/01-new-coverage.txt")
 	require.NoError(t, err)
 
 	pkgs := cov.ByPackage()

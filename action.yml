@@ -60,7 +60,6 @@ runs:
         files: |
           **.go
         files_ignore: |
-          **_test.go
           vendor/**
 
     - name: Code coverage report

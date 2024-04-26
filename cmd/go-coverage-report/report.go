@@ -125,10 +125,32 @@ func (r *Report) addDetails(report *strings.Builder) {
 	fmt.Fprintln(report, "<summary>Coverage by file</summary>")
 	fmt.Fprintln(report)
 
+	var codeFiles, unitTestFiles []string
+	for _, f := range r.ChangedFiles {
+		if strings.HasSuffix(f, "_test.go") {
+			unitTestFiles = append(unitTestFiles, f)
+		} else {
+			codeFiles = append(codeFiles, f)
+		}
+	}
+
+	if len(codeFiles) > 0 {
+		r.addCodeFileDetails(report, codeFiles)
+	}
+	if len(unitTestFiles) > 0 {
+		r.addTestFileDetails(report, unitTestFiles)
+	}
+
+	fmt.Fprint(report, "</details>")
+}
+
+func (r *Report) addCodeFileDetails(report *strings.Builder, files []string) {
+	fmt.Fprintln(report, "### Changed files (no unit tests)")
+	fmt.Fprintln(report)
 	fmt.Fprintln(report, "| Changed File | Coverage Δ | Total | Covered | Missed | :robot: |")
 	fmt.Fprintln(report, "|--------------|------------|-------|---------|--------|---------|")
 
-	for _, name := range r.ChangedFiles {
+	for _, name := range files {
 		var oldPercent, newPercent float64
 
 		oldProfile := r.Old.Files[name]
@@ -170,8 +192,17 @@ func (r *Report) addDetails(report *strings.Builder) {
 		"above refer to ***code statements*** instead of lines of code. The value in brackets "+
 		"refers to the test coverage of that file in the old version of the code._")
 	fmt.Fprintln(report)
+}
 
-	fmt.Fprint(report, "</details>")
+func (r *Report) addTestFileDetails(report *strings.Builder, files []string) {
+	fmt.Fprintln(report, "### Changed unit test files")
+	fmt.Fprintln(report)
+
+	for _, name := range files {
+		fmt.Fprintf(report, "- %s\n", name)
+	}
+
+	fmt.Fprintln(report)
 }
 
 func (r *Report) JSON() string {

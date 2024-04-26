@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 _Nothing yet_
 
 ## [v1.0.1] - 2024-04-26
-- Show coverage report also if only test files changed (fgrosse/go-coverage-report#18)
+- Show coverage report also if only test files changed (fgrosse/go-coverage-report#20)
 
 ## [v1.0.0] - 2024-03-18
 - Initial release

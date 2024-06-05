@@ -154,7 +154,7 @@ with the summary of the code coverage changes.
   In a repository which receives changes only infrequently, this might lead to issues when trying to compare
   the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).  
 - Packages with a name that differs from their directory on disk are not supported yet.
-- Requires actions/upload-artifact@v4 to [avoid issues when subsequently attempting to download run artifacts via the Github CLI]([https://github.com/cli/cli/issues/5625](https://github.com/cli/cli/issues/5625#issuecomment-1857787634)).
+- Requires actions/upload-artifact@v4 to [avoid issues when subsequently attempting to download run artifacts via the Github CLI](https://github.com/cli/cli/issues/5625#issuecomment-1857787634).
 
 ## Built With
 

@@ -97,7 +97,7 @@ if ! [[ "$SHA256SUM" ]] ; then
   start_group "Checking checksum using checksums.txt file from GitHub release"
   URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/checksums.txt"
   cd .github/outputs
-  curl -fsSL "$URL" | sha256sum --check --ignore-missing
+  curl -fsSL "$URL" | sha256sum -c --ignore-missing
   cd -
   end_group
 else

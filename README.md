@@ -1,5 +1,5 @@
 <h1 align="center">Go Coverage Report</h1>
-<p align="center">A CLI tool and GitHub Action to post Go code coverage reports as comment to your pull requests.</p>
+<p align="center">A fork of fgrosse's hard work, to tweak some runtime flags to make Alpine happy. Retaining all original links in this README.md. Please consider giving him a star!</p>
 <p align="center">
     <a href="https://github.com/fgrosse/go-coverage-report/releases"><img src="https://img.shields.io/github/tag/fgrosse/go-coverage-report.svg?label=version&color=brightgreen"></a>
     <a href="https://github.com/fgrosse/go-coverage-report/actions/workflows/ci.yml"><img src="https://github.com/fgrosse/go-coverage-report/actions/workflows/ci.yml/badge.svg"></a>

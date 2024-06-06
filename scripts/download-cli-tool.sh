@@ -66,7 +66,7 @@ fi
 
 if [[ ${#VERSION} == 40 ]]; then
   start_group "Installing go-coverage-report from remote source"
-  go install -v "github.com/fgrosse/go-coverage-report@$VERSION"
+  go install -v "github.com/AwayFromServer/go-coverage-report@$VERSION"
   end_group
   exit 0
 fi
@@ -89,13 +89,13 @@ start_group "Downloading tar archive from GitHub"
 mkdir -p .github/outputs
 OS=$(echo "$RUNNER_OS" | tr '[:upper:]' '[:lower:]')
 FILENAME="go-coverage-report-${VERSION}-${OS}-${ARCH}.tar.gz"
-URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/${FILENAME}"
+URL="https://github.com/AwayFromServer/go-coverage-report/releases/download/${VERSION}/${FILENAME}"
 curl --fail --location "$URL" --output ".github/outputs/$FILENAME"
 end_group
 
 if ! [[ "$SHA256SUM" ]] ; then
   start_group "Checking checksum using checksums.txt file from GitHub release"
-  URL="https://github.com/fgrosse/go-coverage-report/releases/download/${VERSION}/checksums.txt"
+  URL="https://github.com/AwayFromServer/go-coverage-report/releases/download/${VERSION}/checksums.txt"
   cd .github/outputs
   curl -fsSL "$URL" | sha256sum -c --ignore-missing
   cd -

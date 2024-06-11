@@ -79,8 +79,9 @@ end_group(){
 }
 
 start_group "Download code coverage results from current run"
-gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs
-mv ".github/outputs/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH
+gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$GITHUB_RUN_ID"
+mv "/tmp/gh-run-download-$GITHUB_RUN_ID/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH
+rm -r "/tmp/gh-run-download-$GITHUB_RUN_ID"
 end_group
 
 start_group "Download code coverage results from target branch"
@@ -90,8 +91,9 @@ if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
   exit 1
 fi
 
-gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs
-mv ".github/outputs/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
+gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
+mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
+rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
 end_group
 
 start_group "Compare code coverage results"

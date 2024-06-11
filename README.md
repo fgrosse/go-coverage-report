@@ -154,6 +154,7 @@ with the summary of the code coverage changes.
   In a repository which receives changes only infrequently, this might lead to issues when trying to compare
   the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).  
 - Packages with a name that differs from their directory on disk are not supported yet.
+- Requires `actions/upload-artifact` >= **v4** (see this [issue][upload-artifacts-issues]).
 
 ## Built With
 
@@ -186,3 +187,4 @@ This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICE
 [releases]: https://github.com/fgrosse/go-coverage-report/release
 [contributors]: https://github.com/fgrosse/go-coverage-report/contributors
 [built-with]: go.mod
+[upload-artifacts-issues]: https://github.com/cli/cli/issues/5625#issuecomment-1857787634

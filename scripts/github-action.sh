@@ -48,8 +48,8 @@ TARGET_BRANCH=${GITHUB_BASE_REF:-main}
 COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
 COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
 
-OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
-NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
+OLD_COVERAGE_PATH=.github/outputs/old_coverage/old-coverage.txt
+NEW_COVERAGE_PATH=.github/outputs/new_coverage/new-coverage.txt
 COVERAGE_COMMENT_PATH=.github/outputs/coverage-comment.md
 CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_changed_files.json}
 
@@ -79,21 +79,25 @@ end_group(){
 }
 
 start_group "Download code coverage results from current run"
-gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$GITHUB_RUN_ID"
-mv "/tmp/gh-run-download-$GITHUB_RUN_ID/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH
-rm -r "/tmp/gh-run-download-$GITHUB_RUN_ID"
+gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs/new_coverage
+mv ".github/outputs/new_coverage/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH
 end_group
 
 start_group "Download code coverage results from target branch"
-LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
+# Check if LAST_SUCCESSFUL_RUN_ID is already set
 if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
-  echo "::error::No successful run found on the target branch"
-  exit 1
+  echo "Fetching default target branch run ID"
+  LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
+  if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
+    echo "::error::No successful run found on the target branch"
+    exit 1
+  fi
+else
+  echo "Using provided target-run-id: $LAST_SUCCESSFUL_RUN_ID"
 fi
 
-gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
-mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
-rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
+gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir=.github/outputs/old_coverage
+mv ".github/outputs/old_coverage/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
 end_group
 
 start_group "Compare code coverage results"

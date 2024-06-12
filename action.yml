@@ -1,29 +1,33 @@
-name: 'Go Unit Test Coverage Report'
-description: 'Post Go code coverage reports to pull requests.'
+name: "Go Unit Test Coverage Report"
+description: "Post Go code coverage reports to pull requests."
 author: "Friedrich Große"
 branding:
-  icon: 'umbrella'
-  color: 'blue'
+  icon: "umbrella"
+  color: "blue"
 
 inputs:
   version:
-    description: 'The exact version tag of the go-coverage-report tool to use.'
+    description: "The exact version tag of the go-coverage-report tool to use."
     required: true
-    default: "v1.0.2"
+    default: "v1.0.1"
 
   sha256sum:
-    description: 'Optional SHA256 checksum of the tarball when downloading the go-coverage-report binary.'
+    description: "Optional SHA256 checksum of the tarball when downloading the go-coverage-report binary."
     required: false
 
   coverage-artifact-name:
-    description: 'The name of the artifact containing the code coverage results.'
+    description: "The name of the artifact containing the code coverage results."
     required: true
     default: "code-coverage"
 
   coverage-file-name:
-    description: 'The name of the file containing the code coverage results.'
+    description: "The name of the file containing the code coverage results."
     required: true
     default: "coverage.txt"
+
+  target-run-id:
+    description: "The Github Run ID of the target branch to compare coverage against"
+    required: false
 
   root-package:
     description: |
@@ -72,6 +76,7 @@ runs:
         GITHUB_BASE_REF: ${{ github.base_ref }}
         CHANGED_FILES_PATH: .github/outputs/all_changed_files.json
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
+        LAST_SUCCESSFUL_RUN_ID: ${{ inputs.target-run-id }}
         COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}
         ROOT_PACKAGE: ${{ inputs.root-package }}
         TRIM_PACKAGE: ${{ inputs.trim }}

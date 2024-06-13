@@ -29,6 +29,12 @@ inputs:
     description: "The Github Run ID of the target branch to compare coverage against"
     required: false
 
+  main-coverage-artifact-name:
+    description: |
+      The artifact name associated with the main coverage file. This is intended to be used when running
+      generating coverage for main and the PR in the same pipeline.
+    required: false
+
   root-package:
     description: |
       The Go import path of the tested repository to add as a prefix to all paths of the
@@ -76,6 +82,7 @@ runs:
         GITHUB_BASE_REF: ${{ github.base_ref }}
         CHANGED_FILES_PATH: .github/outputs/all_changed_files.json
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
+        MAIN_COVERAGE_ARTIFACT_NAME: ${{ inputs.main-coverage-artifact-name }}
         LAST_SUCCESSFUL_RUN_ID: ${{ inputs.target-run-id }}
         COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}
         ROOT_PACKAGE: ${{ inputs.root-package }}

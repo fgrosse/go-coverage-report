@@ -48,8 +48,8 @@ TARGET_BRANCH=${GITHUB_BASE_REF:-main}
 COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
 COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
 
-OLD_COVERAGE_PATH=.github/outputs/old_coverage/old-coverage.txt
-NEW_COVERAGE_PATH=.github/outputs/new_coverage/new-coverage.txt
+OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
+NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
 COVERAGE_COMMENT_PATH=.github/outputs/coverage-comment.md
 CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_changed_files.json}
 

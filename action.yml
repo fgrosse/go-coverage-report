@@ -21,13 +21,14 @@ inputs:
     default: "code-coverage"
 
   coverage-file-name:
-    description: "The name of the file containing the code coverage results."
+    description: "The name of the file containing the code coverage results provided by the coverage artifact."
     required: true
     default: "coverage.txt"
 
-  target-run-id:
-    description: "The Github Run ID of the target branch to compare coverage against"
-    required: false
+  main-coverage-file-name:
+    description: |
+      The file name associated with the main coverage file provided by the coverage artifact.
+    required: true
 
   main-coverage-artifact-name:
     description: |
@@ -82,8 +83,7 @@ runs:
         GITHUB_BASE_REF: ${{ github.base_ref }}
         CHANGED_FILES_PATH: .github/outputs/all_changed_files.json
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
-        MAIN_COVERAGE_ARTIFACT_NAME: ${{ inputs.main-coverage-artifact-name }}
-        LAST_SUCCESSFUL_RUN_ID: ${{ inputs.target-run-id }}
+        MAIN_COVERAGE_FILE_NAME: ${{ inputs.main-coverage-file-name }}
         COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}
         ROOT_PACKAGE: ${{ inputs.root-package }}
         TRIM_PACKAGE: ${{ inputs.trim }}

@@ -78,28 +78,11 @@ end_group(){
     echo "::endgroup::"
 }
 
-start_group "Download code coverage results from current run"
+start_group "Download merged coverage results"
 gh run download "$GITHUB_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$GITHUB_RUN_ID"
 mv "/tmp/gh-run-download-$GITHUB_RUN_ID/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH
+mv "/tmp/gh-run-download-$GITHUB_RUN_ID/$MAIN_COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
 rm -r "/tmp/gh-run-download-$GITHUB_RUN_ID"
-end_group
-
-start_group "Download code coverage results from target branch"
-# Fetch artifact from provided run ID for comparison
-if [ -n "$LAST_SUCCESSFUL_RUN_ID" ]; then
-  echo "Using provided target-run-id: $LAST_SUCCESSFUL_RUN_ID"
-  gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
-  mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
-  rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
-fi
-
-# Use provided artifact name from current run for comparison
-if [ -n "$MAIN_COVERAGE_ARTIFACT_NAME" ]; then
-  echo "Using main coverage artifact name from $GITHUB_RUN_ID"
-  gh run download "$GITHUB_RUN_ID" --name="$MAIN_COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$GITHUB_RUN_ID"
-  mv "/tmp/gh-run-download-$GITHUB_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
-  rm -r "/tmp/gh-run-download-$GITHUB_RUN_ID"
-fi
 end_group
 
 start_group "Compare code coverage results"

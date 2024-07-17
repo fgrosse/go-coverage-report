@@ -35,9 +35,20 @@ inputs:
     required: false
     default: "github.com/${{ github.repository }}"
 
+  skip-comment:
+    description: 'If true, skip creating or updating the PR comment.'
+    required: false
+    default: false
+    type: boolean
+
   trim:
     description: Trim a prefix in the "Impacted Packages" column of the markdown report.
     required: false
+
+outputs:
+  coverage_report:
+    description: 'The generated coverage report in markdown format.'
+    value: ${{ steps.coverage.outputs.coverage_report }}
 
 runs:
   using: "composite"
@@ -61,10 +72,13 @@ runs:
           **.go
         files_ignore: |
           vendor/**
+    - run: cat .github/outputs/all_modified_files.json
+      shell: bash
 
     - name: Code coverage report
       shell: bash
-      run: $GITHUB_ACTION_PATH/scripts/github-action.sh "${{ github.repository }}" "${{ github.event.pull_request.number }}" "${{ github.run_id }}"
+      id: coverage
+      run: $GITHUB_ACTION_PATH/scripts/github-action.sh --skip-comment ${{ inputs.skip-comment }} "${{ github.repository }}" "${{ github.event.pull_request.number }}" "${{ github.run_id }}"
       env:
         GH_REPO: ${{ github.repository }}
         GH_TOKEN: ${{ github.token }}

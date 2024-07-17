@@ -141,12 +141,20 @@ inputs:
   trim:
     description: Trim a prefix in the "Impacted Packages" column of the markdown report.
     required: false
+
+  skip-comment:
+    description: 'If set, skip creating or updating the PR comment.'
+    required: false
+    default: 'false'
 ```
 
 ### Outputs
 
-This action does not provide any outputs, but it will comment on your pull request
-with the summary of the code coverage changes.
+This action provides the following output:
+
+- `coverage_report`: The generated coverage report in markdown format.
+
+This output can be used whether or not `skip-comment` is set.
 
 ## Limitations
 

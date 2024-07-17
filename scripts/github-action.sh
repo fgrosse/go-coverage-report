@@ -11,16 +11,17 @@ This script is meant to be used as a GitHub action and makes use of Workflow com
 described in https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
 
 Usage:
-    $0 github_repository github_pull_request_number github_run_id
+    $0 [--skip-comment] github_repository github_pull_request_number github_run_id
 
 Example:
     $0 fgrosse/prioqueue 12 8221109494
+    $0 --skip-comment fgrosse/prioqueue 12 8221109494
 
 You can largely rely on the default environment variables set by GitHub Actions. The script should be invoked like
 this in the workflow file:
 
     -name: Code coverage report
-     run: github-action.sh \${{ github.repository }} \${{ github.event.pull_request.number }} \${{ github.run_id }}
+     run: github-action.sh --skip-comment \${{ inputs.skip-comment }} \${{ github.repository }} \${{ github.event.pull_request.number }} \${{ github.run_id }}
      env: …
 
 You can use the following environment variables to configure the script:
@@ -33,8 +34,30 @@ You can use the following environment variables to configure the script:
 - TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
 "
 
+SKIP_COMMENT=false
+
+# Parse optional flags
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --skip-comment)
+      SKIP_COMMENT=true
+      shift
+      # Check if the next argument is a boolean value
+      if [[ "$1" == "false" ]]; then
+        SKIP_COMMENT=false
+        shift
+      elif [[ "$1" == "true" ]]; then
+        shift
+      fi
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
 if [[ $# != 3 ]]; then
-  echo -e "Error: script requires exactly three arguments\n"
+  echo -e "Error: script requires exactly three positional arguments\n"
   echo "$USAGE"
   exit 1
 fi
@@ -42,7 +65,6 @@ fi
 GITHUB_REPOSITORY=$1
 GITHUB_PULL_REQUEST_NUMBER=$2
 GITHUB_RUN_ID=$3
-
 GITHUB_WORKFLOW=${GITHUB_WORKFLOW:-CI}
 TARGET_BRANCH=${GITHUB_BASE_REF:-main}
 COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
@@ -107,7 +129,21 @@ go-coverage-report \
 end_group
 
 if [ ! -s $COVERAGE_COMMENT_PATH ]; then
-  echo "::notice::No coverage report to comment"
+  echo "::notice::No coverage report to output"
+  exit 0
+fi
+
+start_group "Output coverage report as GitHub Action output"
+COVERAGE_REPORT=$(cat $COVERAGE_COMMENT_PATH)
+# Encode newlines
+COVERAGE_REPORT="${COVERAGE_REPORT//$'\n'/'\n'}"
+COVERAGE_REPORT="${COVERAGE_REPORT//$'\r'/'\r'}"
+# Save to GITHUB_OUTPUT file
+echo "coverage_report=$COVERAGE_REPORT" >> $GITHUB_OUTPUT
+end_group
+
+if [ "$SKIP_COMMENT" = "true" ]; then
+  echo "Skipping PR comment creation as requested"
   exit 0
 fi
 

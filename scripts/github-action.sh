@@ -122,9 +122,9 @@ fi
 # Output the coverage report as a multiline GitHub output parameter
 echo "Writing GitHub output parameter to \"$GITHUB_OUTPUT\""
 {
-  echo "coverage_report<<EOF="
+  echo "coverage_report<<END_OF_COVERAGE_REPORT"
   cat "$COVERAGE_COMMENT_PATH"
-  echo "EOF"
+  echo "END_OF_COVERAGE_REPORT"
 } >> "$GITHUB_OUTPUT"
 
 if [ "$SKIP_COMMENT" = "true" ]; then

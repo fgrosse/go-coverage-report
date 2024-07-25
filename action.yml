@@ -36,10 +36,11 @@ inputs:
     default: "github.com/${{ github.repository }}"
 
   skip-comment:
-    description: 'If true, skip creating or updating the PR comment.'
+    description: |
+      Skip creating or updating the pull request comment. This may be useful when you want
+      to generate the coverage report and modify it in your own scripts.
     required: false
-    default: false
-    type: boolean
+    default: 'false'
 
   trim:
     description: Trim a prefix in the "Impacted Packages" column of the markdown report.
@@ -47,7 +48,7 @@ inputs:
 
 outputs:
   coverage_report:
-    description: 'The generated coverage report in markdown format.'
+    description: 'The generated coverage report in Markdown format.'
     value: ${{ steps.coverage.outputs.coverage_report }}
 
 runs:
@@ -72,13 +73,11 @@ runs:
           **.go
         files_ignore: |
           vendor/**
-    - run: cat .github/outputs/all_modified_files.json
-      shell: bash
 
     - name: Code coverage report
       shell: bash
       id: coverage
-      run: $GITHUB_ACTION_PATH/scripts/github-action.sh --skip-comment ${{ inputs.skip-comment }} "${{ github.repository }}" "${{ github.event.pull_request.number }}" "${{ github.run_id }}"
+      run: $GITHUB_ACTION_PATH/scripts/github-action.sh "${{ github.repository }}" "${{ github.event.pull_request.number }}" "${{ github.run_id }}"
       env:
         GH_REPO: ${{ github.repository }}
         GH_TOKEN: ${{ github.token }}
@@ -88,4 +87,5 @@ runs:
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
         COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}
         ROOT_PACKAGE: ${{ inputs.root-package }}
+        SKIP_COMMENT: ${{ inputs.skip-comment }}
         TRIM_PACKAGE: ${{ inputs.trim }}

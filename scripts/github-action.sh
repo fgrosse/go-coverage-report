@@ -11,17 +11,16 @@ This script is meant to be used as a GitHub action and makes use of Workflow com
 described in https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
 
 Usage:
-    $0 [--skip-comment] github_repository github_pull_request_number github_run_id
+    $0 github_repository github_pull_request_number github_run_id
 
 Example:
     $0 fgrosse/prioqueue 12 8221109494
-    $0 --skip-comment fgrosse/prioqueue 12 8221109494
 
 You can largely rely on the default environment variables set by GitHub Actions. The script should be invoked like
 this in the workflow file:
 
     -name: Code coverage report
-     run: github-action.sh --skip-comment \${{ inputs.skip-comment }} \${{ github.repository }} \${{ github.event.pull_request.number }} \${{ github.run_id }}
+     run: github-action.sh \${{ github.repository }} \${{ github.event.pull_request.number }} \${{ github.run_id }}
      env: …
 
 You can use the following environment variables to configure the script:
@@ -32,32 +31,11 @@ You can use the following environment variables to configure the script:
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
 - ROOT_PACKAGE: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
 - TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
+- SKIP_COMMENT: Skip creating or updating the pull request comment (default: false)
 "
 
-SKIP_COMMENT=false
-
-# Parse optional flags
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    --skip-comment)
-      SKIP_COMMENT=true
-      shift
-      # Check if the next argument is a boolean value
-      if [[ "$1" == "false" ]]; then
-        SKIP_COMMENT=false
-        shift
-      elif [[ "$1" == "true" ]]; then
-        shift
-      fi
-      ;;
-    *)
-      break
-      ;;
-  esac
-done
-
 if [[ $# != 3 ]]; then
-  echo -e "Error: script requires exactly three positional arguments\n"
+  echo -e "Error: script requires exactly three arguments\n"
   echo "$USAGE"
   exit 1
 fi
@@ -74,6 +52,7 @@ OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
 NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
 COVERAGE_COMMENT_PATH=.github/outputs/coverage-comment.md
 CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_modified_files.json}
+SKIP_COMMENT=${SKIP_COMMENT:-false}
 
 if [[ -z ${GITHUB_REPOSITORY+x} ]]; then
     echo "Missing github_repository argument"
@@ -135,15 +114,13 @@ fi
 
 start_group "Output coverage report as GitHub Action output"
 COVERAGE_REPORT=$(cat $COVERAGE_COMMENT_PATH)
-# Encode newlines
-COVERAGE_REPORT="${COVERAGE_REPORT//$'\n'/'\n'}"
+COVERAGE_REPORT="${COVERAGE_REPORT//$'\n'/'\n'}" # Encode newlines
 COVERAGE_REPORT="${COVERAGE_REPORT//$'\r'/'\r'}"
-# Save to GITHUB_OUTPUT file
-echo "coverage_report=$COVERAGE_REPORT" >> $GITHUB_OUTPUT
+echo "coverage_report=$COVERAGE_REPORT" >> "$GITHUB_OUTPUT"  # Save to GITHUB_OUTPUT file
 end_group
 
 if [ "$SKIP_COMMENT" = "true" ]; then
-  echo "Skipping PR comment creation as requested"
+  echo "Skipping pull request comment (\$SKIP_COMMENT=true))"
   exit 0
 fi
 

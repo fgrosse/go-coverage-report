@@ -69,6 +69,13 @@ if [[ -z ${GITHUB_RUN_ID+x} ]]; then
     exit 1
 fi
 
+if [[ -z ${GITHUB_OUTPUT+x} ]]; then
+    echo "Missing GITHUB_OUTPUT environment variable"
+    exit 1
+fi
+
+export GH_REPO="$GITHUB_REPOSITORY"
+
 start_group(){
     echo "::group::$*"
     { set -x; return; } 2>/dev/null
@@ -112,12 +119,13 @@ if [ ! -s $COVERAGE_COMMENT_PATH ]; then
   exit 0
 fi
 
-start_group "Output coverage report as GitHub Action output"
-COVERAGE_REPORT=$(cat $COVERAGE_COMMENT_PATH)
-COVERAGE_REPORT="${COVERAGE_REPORT//$'\n'/'\n'}" # Encode newlines
-COVERAGE_REPORT="${COVERAGE_REPORT//$'\r'/'\r'}"
-echo "coverage_report=$COVERAGE_REPORT" >> "$GITHUB_OUTPUT"  # Save to GITHUB_OUTPUT file
-end_group
+# Output the coverage report as a multiline GitHub output parameter
+echo "Writing GitHub output parameter to \"$GITHUB_OUTPUT\""
+{
+  echo "coverage_report<<EOF="
+  cat "$COVERAGE_COMMENT_PATH"
+  echo "EOF"
+} >> "$GITHUB_OUTPUT"
 
 if [ "$SKIP_COMMENT" = "true" ]; then
   echo "Skipping pull request comment (\$SKIP_COMMENT=true))"

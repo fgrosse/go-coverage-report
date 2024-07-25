@@ -31,6 +31,7 @@ You can use the following environment variables to configure the script:
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
 - ROOT_PACKAGE: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
 - TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
+- SKIP_COMMENT: Skip creating or updating the pull request comment (default: false)
 "
 
 if [[ $# != 3 ]]; then
@@ -42,7 +43,6 @@ fi
 GITHUB_REPOSITORY=$1
 GITHUB_PULL_REQUEST_NUMBER=$2
 GITHUB_RUN_ID=$3
-
 GITHUB_WORKFLOW=${GITHUB_WORKFLOW:-CI}
 TARGET_BRANCH=${GITHUB_BASE_REF:-main}
 COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
@@ -52,6 +52,7 @@ OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
 NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
 COVERAGE_COMMENT_PATH=.github/outputs/coverage-comment.md
 CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_modified_files.json}
+SKIP_COMMENT=${SKIP_COMMENT:-false}
 
 if [[ -z ${GITHUB_REPOSITORY+x} ]]; then
     echo "Missing github_repository argument"
@@ -67,6 +68,13 @@ if [[ -z ${GITHUB_RUN_ID+x} ]]; then
     echo "Missing github_run_id argument"
     exit 1
 fi
+
+if [[ -z ${GITHUB_OUTPUT+x} ]]; then
+    echo "Missing GITHUB_OUTPUT environment variable"
+    exit 1
+fi
+
+export GH_REPO="$GITHUB_REPOSITORY"
 
 start_group(){
     echo "::group::$*"
@@ -107,7 +115,20 @@ go-coverage-report \
 end_group
 
 if [ ! -s $COVERAGE_COMMENT_PATH ]; then
-  echo "::notice::No coverage report to comment"
+  echo "::notice::No coverage report to output"
+  exit 0
+fi
+
+# Output the coverage report as a multiline GitHub output parameter
+echo "Writing GitHub output parameter to \"$GITHUB_OUTPUT\""
+{
+  echo "coverage_report<<END_OF_COVERAGE_REPORT"
+  cat "$COVERAGE_COMMENT_PATH"
+  echo "END_OF_COVERAGE_REPORT"
+} >> "$GITHUB_OUTPUT"
+
+if [ "$SKIP_COMMENT" = "true" ]; then
+  echo "Skipping pull request comment (\$SKIP_COMMENT=true))"
   exit 0
 fi
 

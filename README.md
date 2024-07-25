@@ -142,14 +142,22 @@ inputs:
     default: "github.com/${{ github.repository }}"
 
   trim:
-    description: Trim a prefix in the "Impacted Packages" column of the markdown report.
+    description: 'Trim a prefix in the "Impacted Packages" column of the markdown report.'
     required: false
+
+  skip-comment:
+    description: |
+      Skip creating or updating the pull request comment. This may be useful when you want
+      to generate the coverage report and modify it in your own scripts.
+    required: false
+    default: 'false'
 ```
 
 ### Outputs
 
-This action does not provide any outputs, but it will comment on your pull request
-with the summary of the code coverage changes.
+This action provides the following outputs:
+
+- `coverage_report`: The generated coverage report in Markdown format.
 
 ## Limitations
 

@@ -29,7 +29,7 @@ You can use the following environment variables to configure the script:
 - GITHUB_BASE_REF: The base branch to compare the coverage results against (default: main)
 - COVERAGE_ARTIFACT_NAME: The name of the artifact containing the code coverage results (default: code-coverage)
 - COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
-- CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_changed_files.json)
+- CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
 - ROOT_PACKAGE: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
 - TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
 "
@@ -73,7 +73,7 @@ COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
 OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
 NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
 COVERAGE_COMMENT_PATH=.github/outputs/coverage-comment.md
-CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_changed_files.json}
+CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_modified_files.json}
 
 if [[ -z ${GITHUB_REPOSITORY+x} ]]; then
     echo "Missing github_repository argument"

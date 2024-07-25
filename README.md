@@ -96,6 +96,9 @@ jobs:
     if: github.event_name == 'pull_request' # Do not run when workflow is triggered by push to main branch
     runs-on: ubuntu-latest
     needs: unit_tests # Depends on the artifact uploaded by the "unit_tests" job
+    permissions:
+      contents:      read  # to download code coverage results from unit_tests job
+      pull-requests: write # write permission needed to comment on PR
     steps:
       - uses: fgrosse/go-coverage-report@v1.0.2 # Consider using a Git revision for maximum security
         with:

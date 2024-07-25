@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Fix issue with code coverage information missing when test files are deleted (fgrosse/go-coverage-report#35)
 - Document permissions needed to use this action (fgrosse/go-coverage-report#32)
+- Add new `skip-comment` input to skip adding a comment to the PR (fgrosse/go-coverage-report#34)
 
 ## [v1.0.2] - 2024-06-11
 - Fix issue when coverage artifact contains more files than just the `coverage.txt` file (fgrosse/go-coverage-report#25)

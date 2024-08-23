@@ -101,7 +101,7 @@ jobs:
       actions:       read  # to download code coverage results from "test" job
       pull-requests: write # write permission needed to comment on PR
     steps:
-      - uses: fgrosse/go-coverage-report@v1.0.2 # Consider using a Git revision for maximum security
+      - uses: fgrosse/go-coverage-report@v1.1.1 # Consider using a Git revision for maximum security
         with:
           coverage-artifact-name: "code-coverage" # can be omitted if you used this default value
           coverage-file-name: "coverage.txt" # can be omitted if you used this default value
@@ -116,7 +116,7 @@ inputs:
   version:
     description: 'The exact version of the go-coverage-report tool to use.'
     required: true
-    default: "v1.0.2"
+    default: "v1.1.1"
 
   sha256sum:
     description: 'Optional SHA256 checksum of the tarball when downloading the go-coverage-report binary.'

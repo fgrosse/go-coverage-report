@@ -25,6 +25,7 @@ this in the workflow file:
 
 You can use the following environment variables to configure the script:
 - GITHUB_WORKFLOW: The name of the Workflow (default: CI)
+- GITHUB_WORKFLOW_REF: The ref path to the workflow to use instead of GITHUB_WORKFLOW (optional)
 - GITHUB_BASE_REF: The base branch to compare the coverage results against (default: main)
 - COVERAGE_ARTIFACT_NAME: The name of the artifact containing the code coverage results (default: code-coverage)
 - COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
@@ -72,6 +73,11 @@ fi
 if [[ -z ${GITHUB_OUTPUT+x} ]]; then
     echo "Missing GITHUB_OUTPUT environment variable"
     exit 1
+fi
+
+# If GITHUB_WORKFLOW_REF is defined, extract the workflow file path from it and use it instead of GITHUB_WORKFLOW
+if [[ -n ${GITHUB_WORKFLOW_REF+x} ]]; then
+    GITHUB_WORKFLOW=$(basename "${GITHUB_WORKFLOW_REF%%@*}")
 fi
 
 export GH_REPO="$GITHUB_REPOSITORY"

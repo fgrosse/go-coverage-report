@@ -81,7 +81,7 @@ runs:
       env:
         GH_REPO: ${{ github.repository }}
         GH_TOKEN: ${{ github.token }}
-        GITHUB_WORKFLOW: ${{ github.workflow }}
+        GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
         GITHUB_BASE_REF: ${{ github.base_ref }}
         CHANGED_FILES_PATH: .github/outputs/all_modified_files.json
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}

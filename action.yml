@@ -9,7 +9,7 @@ inputs:
   version:
     description: "The exact version tag of the go-coverage-report tool to use."
     required: true
-    default: "v1.0.1"
+    default: "main"
 
   sha256sum:
     description: "Optional SHA256 checksum of the tarball when downloading the go-coverage-report binary."
@@ -57,10 +57,7 @@ runs:
     - name: Download go-coverage-report
       shell: bash
       id: download
-      run: $GITHUB_ACTION_PATH/scripts/download-cli-tool.sh "${{ inputs.version }}" "${{ inputs.sha256sum }}"
-      env:
-        RUNNER_OS: ${{ runner.os }}
-        RUNNER_ARCH: ${{ runner.arch }}
+      run:  go install -v "github.com/Striveworks/go-coverage-report@${{ inputs.version }}"
 
     - name: Determine changed files
       id: changed-files

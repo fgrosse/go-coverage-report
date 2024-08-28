@@ -114,7 +114,7 @@ jobs:
 ```yaml
 inputs:
   version:
-    description: 'The exact version of the go-coverage-report tool to use.'
+    description: 'The exact version tag of the go-coverage-report tool to use.'
     required: true
     default: "v1.1.1"
 
@@ -142,16 +142,24 @@ inputs:
     required: false
     default: "github.com/${{ github.repository }}"
 
-  trim:
-    description: 'Trim a prefix in the "Impacted Packages" column of the markdown report.'
-    required: false
-
   skip-comment:
     description: |
       Skip creating or updating the pull request comment. This may be useful when you want
       to generate the coverage report and modify it in your own scripts.
     required: false
     default: 'false'
+
+  trim:
+    description: Trim a prefix in the "Impacted Packages" column of the markdown report.
+    required: false
+
+  github-baseline-workflow-ref:
+    description: |
+      The ref of the GitHub actions Workflow that produces the baseline coverage.
+      By default, the GitHub Actions Workflow ref is used
+      (e.g. "octocat/hello-world/.github/workflows/my-workflow.yml@refs/heads/my_branch").
+      You can aso just pass the name of the Workflow file directly (e.g. "my-workflow.yml").
+    default: ${{ github.workflow_ref }}
 ```
 
 ### Outputs

@@ -160,6 +160,7 @@ inputs:
       (e.g. "octocat/hello-world/.github/workflows/my-workflow.yml@refs/heads/my_branch").
       You can aso just pass the name of the Workflow file directly (e.g. "my-workflow.yml").
     default: ${{ github.workflow_ref }}
+    required: false
 ```
 
 ### Outputs

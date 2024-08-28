@@ -116,7 +116,7 @@ inputs:
   version:
     description: 'The exact version tag of the go-coverage-report tool to use.'
     required: true
-    default: "v1.1.1"
+    default: "v1.2.0"
 
   sha256sum:
     description: 'Optional SHA256 checksum of the tarball when downloading the go-coverage-report binary.'

@@ -46,6 +46,15 @@ inputs:
     description: Trim a prefix in the "Impacted Packages" column of the markdown report.
     required: false
 
+  github-baseline-workflow-ref:
+    description: |
+      The ref of the GitHub actions Workflow that produces the baseline coverage.
+      By default, the GitHub Actions Workflow ref is used
+      (e.g. "octocat/hello-world/.github/workflows/my-workflow.yml@refs/heads/my_branch").
+      You can aso just pass the name of the Workflow file directly (e.g. "my-workflow.yml").
+    default: ${{ github.workflow_ref }}
+    required: false
+
 outputs:
   coverage_report:
     description: 'The generated coverage report in Markdown format.'
@@ -81,8 +90,8 @@ runs:
       env:
         GH_REPO: ${{ github.repository }}
         GH_TOKEN: ${{ github.token }}
-        GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
-        GITHUB_BASE_REF: ${{ github.base_ref }}
+        GITHUB_BASELINE_WORKFLOW_REF: ${{ inputs.github-baseline-workflow-ref }}
+        TARGET_BRANCH: ${{ github.base_ref }}
         CHANGED_FILES_PATH: .github/outputs/all_modified_files.json
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
         COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}

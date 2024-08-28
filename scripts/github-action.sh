@@ -24,9 +24,9 @@ this in the workflow file:
      env: …
 
 You can use the following environment variables to configure the script:
-- GITHUB_WORKFLOW: The name of the Workflow (default: CI)
-- GITHUB_WORKFLOW_REF: The ref path to the workflow to use instead of GITHUB_WORKFLOW (optional)
-- GITHUB_BASE_REF: The base branch to compare the coverage results against (default: main)
+- GITHUB_BASELINE_WORKFLOW: The name of the GitHub actions Workflow that produces the baseline coverage (default: CI)
+- GITHUB_BASELINE_WORKFLOW_REF: The ref path to the workflow to use instead of GITHUB_BASELINE_WORKFLOW (optional)
+- TARGET_BRANCH: The base branch to compare the coverage results against (default: main)
 - COVERAGE_ARTIFACT_NAME: The name of the artifact containing the code coverage results (default: code-coverage)
 - COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
@@ -44,8 +44,8 @@ fi
 GITHUB_REPOSITORY=$1
 GITHUB_PULL_REQUEST_NUMBER=$2
 GITHUB_RUN_ID=$3
-GITHUB_WORKFLOW=${GITHUB_WORKFLOW:-CI}
-TARGET_BRANCH=${GITHUB_BASE_REF:-main}
+GITHUB_BASELINE_WORKFLOW=${GITHUB_BASELINE_WORKFLOW:-CI}
+TARGET_BRANCH=${TARGET_BRANCH:-main}
 COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
 COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
 
@@ -75,9 +75,9 @@ if [[ -z ${GITHUB_OUTPUT+x} ]]; then
     exit 1
 fi
 
-# If GITHUB_WORKFLOW_REF is defined, extract the workflow file path from it and use it instead of GITHUB_WORKFLOW
-if [[ -n ${GITHUB_WORKFLOW_REF+x} ]]; then
-    GITHUB_WORKFLOW=$(basename "${GITHUB_WORKFLOW_REF%%@*}")
+# If GITHUB_BASELINE_WORKFLOW_REF is defined, extract the workflow file path from it and use it instead of GITHUB_BASELINE_WORKFLOW
+if [[ -n ${GITHUB_BASELINE_WORKFLOW_REF+x} ]]; then
+    GITHUB_BASELINE_WORKFLOW=$(basename "${GITHUB_BASELINE_WORKFLOW_REF%%@*}")
 fi
 
 export GH_REPO="$GITHUB_REPOSITORY"
@@ -99,7 +99,7 @@ rm -r "/tmp/gh-run-download-$GITHUB_RUN_ID"
 end_group
 
 start_group "Download code coverage results from target branch"
-LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
+LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_BASELINE_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
 if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
   echo "::error::No successful run found on the target branch"
   exit 1

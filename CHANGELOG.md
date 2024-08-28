@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-_Nothing so far_
+- Add input to configure GitHub Actions workflow filename (fgrosse/go-coverage-report#44)
 
 ## [v1.1.1] - 2024-08-23
 - Fix issue when the workflow file is renamed (fgrosse/go-coverage-report#41)

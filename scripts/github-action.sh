@@ -33,6 +33,7 @@ You can use the following environment variables to configure the script:
 - ROOT_PACKAGE: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
 - TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
 - SKIP_COMMENT: Skip creating or updating the pull request comment (default: false)
+- GENERATE_JSON_REPORT: Generate JSON format report in addition to Markdown format (default: false)
 "
 
 if [[ $# != 3 ]]; then
@@ -52,8 +53,10 @@ COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
 OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
 NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
 COVERAGE_COMMENT_PATH=.github/outputs/coverage-comment.md
+COVERAGE_JSON_PATH=.github/outputs/coverage-report.json
 CHANGED_FILES_PATH=${CHANGED_FILES_PATH:-.github/outputs/all_modified_files.json}
 SKIP_COMMENT=${SKIP_COMMENT:-false}
+GENERATE_JSON_REPORT=${GENERATE_JSON_REPORT:-false}
 
 if [[ -z ${GITHUB_REPOSITORY+x} ]]; then
     echo "Missing github_repository argument"
@@ -132,6 +135,34 @@ echo "Writing GitHub output parameter to \"$GITHUB_OUTPUT\""
   cat "$COVERAGE_COMMENT_PATH"
   echo "END_OF_COVERAGE_REPORT"
 } >> "$GITHUB_OUTPUT"
+
+if [ "$GENERATE_JSON_REPORT" = "true" ]; then
+
+  start_group "Generate JSON format report"
+  go-coverage-report \
+      -root="$ROOT_PACKAGE" \
+      -trim="$TRIM_PACKAGE" \
+      -format=json \
+      "$OLD_COVERAGE_PATH" \
+      "$NEW_COVERAGE_PATH" \
+      "$CHANGED_FILES_PATH" \
+    > $COVERAGE_JSON_PATH
+  end_group
+
+  if [ ! -s $COVERAGE_JSON_PATH ]; then
+    echo "::notice::No JSON coverage report to output"
+    exit 0
+  fi
+
+  # Output the coverage report as a multiline GitHub output parameter
+  echo "Writing JSON report GitHub output parameter to \"$GITHUB_OUTPUT\""
+  {
+    echo "coverage_report_json<<END_OF_COVERAGE_REPORT_JSON"
+    cat "$COVERAGE_JSON_PATH"
+    echo "END_OF_COVERAGE_REPORT_JSON"
+  } >> "$GITHUB_OUTPUT"
+
+fi
 
 if [ "$SKIP_COMMENT" = "true" ]; then
   echo "Skipping pull request comment (\$SKIP_COMMENT=true))"

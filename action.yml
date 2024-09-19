@@ -30,7 +30,7 @@ inputs:
       The Go import path of the tested repository to add as a prefix to all paths of the
       changed files. This is useful to map the changed files (e.g., ["foo/my_file.go"]
       to their coverage profile which uses the full package name to identify the files
-      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently, 
+      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently,
       packages with a different name than their directory are not supported.
     required: false
     default: "github.com/${{ github.repository }}"
@@ -55,10 +55,18 @@ inputs:
     default: ${{ github.workflow_ref }}
     required: false
 
+  generate_json_report:
+    description: 'Generate a JSON report in addition to the Markdown report.'
+    required: false
+    default: 'false'
+
 outputs:
   coverage_report:
     description: 'The generated coverage report in Markdown format.'
     value: ${{ steps.coverage.outputs.coverage_report }}
+  coverage_report_json:
+    description: 'The generated coverage report in JSON format.'
+    value: ${{ steps.coverage.outputs.coverage_report_json }}
 
 runs:
   using: "composite"
@@ -98,3 +106,4 @@ runs:
         ROOT_PACKAGE: ${{ inputs.root-package }}
         SKIP_COMMENT: ${{ inputs.skip-comment }}
         TRIM_PACKAGE: ${{ inputs.trim }}
+        GENERATE_JSON_REPORT: ${{ inputs.generate_json_report }}

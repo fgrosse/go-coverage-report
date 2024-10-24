@@ -180,6 +180,12 @@ This action provides the following outputs:
 - Packages with a name that differs from their directory on disk are not supported yet.
 - Requires `actions/upload-artifact` >= **v4** (see this [issue][upload-artifacts-issues]).
 
+### Workaround for Forks
+
+If you need to support forks, you can use the `pull_request_target` event as a workaround. However, be aware that this comes with a significant security risk. The `pull_request_target` event runs in the context of the base repository, which means it has access to secrets and write permissions. This can be exploited by malicious code in the pull request. Therefore, you should avoid checking out the code from the pull request and be very cautious about what actions you perform.
+
+For more information, see the [GitHub documentation on `pull_request_target`](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target).
+
 ## Built With
 
 * [tj-actions/changed-files](https://github.com/tj-actions/changed-files) - A GitHub Action to get the list of changed files in pull requests

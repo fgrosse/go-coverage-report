@@ -107,7 +107,6 @@ jobs:
           coverage-file-name: "coverage.txt" # can be omitted if you used this default value
 ```
 
-
 ### Inputs
 
 <!-- Could use embedmd like this: [embedmd]:# (action.yml yaml /inputs:/ /# end of inputs/) -->

@@ -101,7 +101,12 @@ end_group
 start_group "Download code coverage results from target branch"
 LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_BASELINE_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
 if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
-  echo "::error::No successful run found on the target branch"
+  echo "::warning::No successful run found for 'push' event. Checking for 'workflow_dispatch' event..."
+  LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_BASELINE_WORKFLOW" --event=workflow_dispatch --json=databaseId --limit=1 -q '.[] | .databaseId')
+fi
+
+if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
+  echo "::error::No successful run found on the target branch for 'push' or 'workflow_dispatch' events."
   exit 1
 fi
 

@@ -173,7 +173,8 @@ This action provides the following outputs:
 
 - Currently, code coverage profiles are uploaded as GitHub artifacts which automatically expire after 90 days.
   In a repository which receives changes only infrequently, this might lead to issues when trying to compare
-  the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).  
+  the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).
+  As a workaround, consider using `workflow_dispatch`. 
 - Support **for forks** is limited since the necessary `GITHUB_TOKEN` permissions don't allow to post comments to the
   pull request of the base repository (see fgrosse/go-coverage-report#15). If forks are important for you, this action
   might not be the best solution.

@@ -30,10 +30,17 @@ inputs:
       The Go import path of the tested repository to add as a prefix to all paths of the
       changed files. This is useful to map the changed files (e.g., ["foo/my_file.go"]
       to their coverage profile which uses the full package name to identify the files
-      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently, 
+      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently,
       packages with a different name than their directory are not supported.
     required: false
     default: "github.com/${{ github.repository }}"
+
+  project-path:
+    description: |
+      The path to the root of the Go project. This is useful when the Go project is not
+      located at the root of the repository.
+    required: false
+    default: ""
 
   skip-comment:
     description: |
@@ -96,5 +103,6 @@ runs:
         COVERAGE_ARTIFACT_NAME: ${{ inputs.coverage-artifact-name }}
         COVERAGE_FILE_NAME: ${{ inputs.coverage-file-name }}
         ROOT_PACKAGE: ${{ inputs.root-package }}
+        PROJECT_PATH: ${{ inputs.project-path }}
         SKIP_COMMENT: ${{ inputs.skip-comment }}
         TRIM_PACKAGE: ${{ inputs.trim }}

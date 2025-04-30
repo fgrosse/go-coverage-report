@@ -14,7 +14,7 @@ func TestReport_Markdown(t *testing.T) {
 	newCov, err := ParseCoverage("testdata/01-new-coverage.txt")
 	require.NoError(t, err)
 
-	changedFiles, err := ParseChangedFiles("testdata/01-changed-files.json", "github.com/fgrosse/prioqueue")
+	changedFiles, err := ParseChangedFiles("testdata/01-changed-files.json", "github.com/fgrosse/prioqueue", "")
 	require.NoError(t, err)
 
 	report := NewReport(oldCov, newCov, changedFiles)
@@ -53,7 +53,7 @@ func TestReport_Markdown_OnlyChangedUnitTests(t *testing.T) {
 	newCov, err := ParseCoverage("testdata/02-new-coverage.txt")
 	require.NoError(t, err)
 
-	changedFiles, err := ParseChangedFiles("testdata/02-changed-files.json", "github.com/fgrosse/prioqueue")
+	changedFiles, err := ParseChangedFiles("testdata/02-changed-files.json", "github.com/fgrosse/prioqueue", "")
 	require.NoError(t, err)
 
 	report := NewReport(oldCov, newCov, changedFiles)
@@ -74,6 +74,39 @@ func TestReport_Markdown_OnlyChangedUnitTests(t *testing.T) {
 ### Changed unit test files
 
 - github.com/fgrosse/prioqueue/min_heap_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}
+
+func TestReport_Markdown_OnlyChangedUnitTestsInDeepProject(t *testing.T) {
+	oldCov, err := ParseCoverage("testdata/03-old-coverage.txt")
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/03-new-coverage.txt")
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/03-changed-files.json", "fgrosse/prioqueue", "app/api")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **increase** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| fgrosse/prioqueue | 99.02% (**+8.82%**) | :thumbsup: |
+
+---
+
+<details>
+
+<summary>Coverage by file</summary>
+
+### Changed unit test files
+
+- fgrosse/prioqueue/min_heap_test.go
 
 </details>`
 	assert.Equal(t, expected, actual)

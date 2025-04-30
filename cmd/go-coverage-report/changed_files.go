@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-func ParseChangedFiles(filename, prefix string) ([]string, error) {
+func ParseChangedFiles(filename, prefix, projectPath string) ([]string, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -19,7 +20,8 @@ func ParseChangedFiles(filename, prefix string) ([]string, error) {
 	}
 
 	for i, file := range files {
-		files[i] = filepath.Join(prefix, file)
+		fileAtProject := strings.Replace(file, projectPath, "", 1)
+		files[i] = filepath.Join(prefix, fileAtProject)
 	}
 
 	return files, nil

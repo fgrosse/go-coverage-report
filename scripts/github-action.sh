@@ -31,6 +31,7 @@ You can use the following environment variables to configure the script:
 - COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
 - ROOT_PACKAGE: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
+- PROJECT_PATH: The path to the root package of the tested repository (optional)
 - TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
 - SKIP_COMMENT: Skip creating or updating the pull request comment (default: false)
 "
@@ -114,6 +115,7 @@ start_group "Compare code coverage results"
 go-coverage-report \
     -root="$ROOT_PACKAGE" \
     -trim="$TRIM_PACKAGE" \
+    -projectPath="$PROJECT_PATH" \
     "$OLD_COVERAGE_PATH" \
     "$NEW_COVERAGE_PATH" \
     "$CHANGED_FILES_PATH" \

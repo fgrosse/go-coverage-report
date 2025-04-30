@@ -31,9 +31,10 @@ OPTIONS:
 `, filepath.Base(os.Args[0])))
 
 type options struct {
-	root   string
-	trim   string
-	format string
+	projectPath string
+	root        string
+	trim        string
+	format      string
 }
 
 func main() {
@@ -67,9 +68,10 @@ func programArgs() (oldCov, newCov, changedFile string, opts options) {
 	}
 
 	opts = options{
-		root:   flag.Lookup("root").Value.String(),
-		trim:   flag.Lookup("trim").Value.String(),
-		format: flag.Lookup("format").Value.String(),
+		root:        flag.Lookup("root").Value.String(),
+		trim:        flag.Lookup("trim").Value.String(),
+		format:      flag.Lookup("format").Value.String(),
+		projectPath: flag.Lookup("projectPath").Value.String(),
 	}
 
 	return args[0], args[1], args[2], opts
@@ -86,7 +88,7 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 		return fmt.Errorf("failed to parse new coverage: %w", err)
 	}
 
-	changedFiles, err := ParseChangedFiles(changedFilesPath, opts.root)
+	changedFiles, err := ParseChangedFiles(changedFilesPath, opts.root, opts.projectPath)
 	if err != nil {
 		return fmt.Errorf("failed to load changed files: %w", err)
 	}

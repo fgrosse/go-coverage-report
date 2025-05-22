@@ -98,3 +98,4 @@ runs:
         ROOT_PACKAGE: ${{ inputs.root-package }}
         SKIP_COMMENT: ${{ inputs.skip-comment }}
         TRIM_PACKAGE: ${{ inputs.trim }}
+        EVENT_NAME: "push"

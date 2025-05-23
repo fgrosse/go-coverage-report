@@ -161,6 +161,16 @@ inputs:
       You can aso just pass the name of the Workflow file directly (e.g. "my-workflow.yml").
     default: ${{ github.workflow_ref }}
     required: false
+
+  event-name:
+    description: "The event that triggered the workflow (default: push)"
+    default: "push"
+    required: false
+
+  target-branch:
+    description: "The base branch to compare the coverage results against (default: github.base_ref)"
+    default: ${{ github.base_ref }}
+    required: false
 ```
 
 ### Outputs

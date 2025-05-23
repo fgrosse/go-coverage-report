@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -31,9 +32,10 @@ OPTIONS:
 `, filepath.Base(os.Args[0])))
 
 type options struct {
-	root   string
-	trim   string
-	format string
+	root          string
+	trim          string
+	format        string
+	excludeFilter *regexp.Regexp
 }
 
 func main() {
@@ -47,6 +49,7 @@ func main() {
 	flag.String("root", "", "The import path of the tested repository to add as prefix to all paths of the changed files")
 	flag.String("trim", "", "trim a prefix in the \"Impacted Packages\" column of the markdown report")
 	flag.String("format", "markdown", "output format (currently only 'markdown' is supported)")
+	flag.String("exclude-filter", "", "exclude files matching the given regular expression from the report")
 
 	err := run(programArgs())
 	if err != nil {
@@ -66,22 +69,33 @@ func programArgs() (oldCov, newCov, changedFile string, opts options) {
 		os.Exit(1)
 	}
 
+	var regexFilter *regexp.Regexp
+	var err error
+	excludeFilter := flag.Lookup("exclude-filter").Value.String()
+	if excludeFilter != "" {
+		regexFilter, err = regexp.Compile(excludeFilter)
+		if err != nil {
+			log.Printf("ERROR: excludeFilter %q is not a valid regular expression: %v\n", excludeFilter, err)
+			os.Exit(1)
+		}
+	}
 	opts = options{
-		root:   flag.Lookup("root").Value.String(),
-		trim:   flag.Lookup("trim").Value.String(),
-		format: flag.Lookup("format").Value.String(),
+		root:          flag.Lookup("root").Value.String(),
+		trim:          flag.Lookup("trim").Value.String(),
+		format:        flag.Lookup("format").Value.String(),
+		excludeFilter: regexFilter,
 	}
 
 	return args[0], args[1], args[2], opts
 }
 
 func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
-	oldCov, err := ParseCoverage(oldCovPath)
+	oldCov, err := ParseCoverage(oldCovPath, opts.excludeFilter)
 	if err != nil {
 		return fmt.Errorf("failed to parse old coverage: %w", err)
 	}
 
-	newCov, err := ParseCoverage(newCovPath)
+	newCov, err := ParseCoverage(newCovPath, opts.excludeFilter)
 	if err != nil {
 		return fmt.Errorf("failed to parse new coverage: %w", err)
 	}

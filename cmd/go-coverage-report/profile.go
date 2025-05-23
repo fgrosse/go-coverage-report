@@ -15,6 +15,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -46,18 +47,18 @@ func (p byFileName) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ParseProfiles parses profile data in the specified file and returns a
 // Profile for each source file described therein.
-func ParseProfiles(fileName string) ([]*Profile, error) {
+func ParseProfiles(fileName string, excludeFilter *regexp.Regexp) ([]*Profile, error) {
 	pf, err := os.Open(fileName)
 	if err != nil {
 		return nil, err
 	}
 	defer pf.Close()
-	return ParseProfilesFromReader(pf)
+	return ParseProfilesFromReader(pf, excludeFilter)
 }
 
 // ParseProfilesFromReader parses profile data from the Reader and
 // returns a Profile for each source file described therein.
-func ParseProfilesFromReader(rd io.Reader) ([]*Profile, error) {
+func ParseProfilesFromReader(rd io.Reader, excludeFilter *regexp.Regexp) ([]*Profile, error) {
 	// First line is "mode: foo", where foo is "set", "count", or "atomic".
 	// Rest of file is in the format
 	//	encoding/base64/base64.go:34.44,37.40 3 1
@@ -76,6 +77,11 @@ func ParseProfilesFromReader(rd io.Reader) ([]*Profile, error) {
 			continue
 		}
 		fn, b, err := parseLine(line)
+
+		// Parsed file name match excludeFilter, skip this file
+		if excludeFilter != nil && excludeFilter.MatchString(fn) {
+			continue
+		}
 		if err != nil {
 			return nil, fmt.Errorf("line %q doesn't match expected format: %v", line, err)
 		}

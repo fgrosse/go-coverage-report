@@ -145,18 +145,8 @@ else
     cat $COVERAGE_COMMENT_PATH >> /tmp/coverage-prefix.md
     mv /tmp/coverage-prefix.md $COVERAGE_COMMENT_PATH
   else
-    # No changed files - provide overall coverage summary instead
-    echo "::notice::No changed Go files detected, calculating overall coverage"
-    TOTAL_COVERAGE=$(go tool cover -func="$NEW_COVERAGE_PATH" | grep total | awk '{print $3}')
-    if [ -n "$TOTAL_COVERAGE" ]; then
-      echo "## Code Coverage Report" > $COVERAGE_COMMENT_PATH
-      echo "" >> $COVERAGE_COMMENT_PATH
-      echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired)." >> $COVERAGE_COMMENT_PATH
-      echo "" >> $COVERAGE_COMMENT_PATH
-      echo "**Overall coverage:** $TOTAL_COVERAGE" >> $COVERAGE_COMMENT_PATH
-      echo "" >> $COVERAGE_COMMENT_PATH
-      echo "_No Go files were changed in this PR._" >> $COVERAGE_COMMENT_PATH
-    fi
+    # No changed Go files - skip posting a comment since there's nothing to report
+    echo "::notice::No changed Go files detected and no baseline available - skipping coverage comment"
   fi
 fi
 end_group

@@ -100,24 +100,50 @@ end_group
 
 start_group "Download code coverage results from target branch"
 LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_BASELINE_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
+BASELINE_AVAILABLE=true
 if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
-  echo "::error::No successful run found on the target branch"
-  exit 1
+  echo "::warning::No successful run found on the target branch"
+  BASELINE_AVAILABLE=false
+else
+  # Try to download the baseline artifact, but don't fail if it's unavailable
+  if gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID" 2>/dev/null; then
+    mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
+    rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
+  else
+    echo "::warning::Baseline coverage artifact not available (may be expired after 90 days)"
+    BASELINE_AVAILABLE=false
+  fi
 fi
-
-gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
-mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
-rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
 end_group
 
 start_group "Compare code coverage results"
-go-coverage-report \
-    -root="$ROOT_PACKAGE" \
-    -trim="$TRIM_PACKAGE" \
-    "$OLD_COVERAGE_PATH" \
-    "$NEW_COVERAGE_PATH" \
-    "$CHANGED_FILES_PATH" \
-  > $COVERAGE_COMMENT_PATH
+if [ "$BASELINE_AVAILABLE" = "true" ]; then
+  # Normal comparison mode with baseline
+  go-coverage-report \
+      -root="$ROOT_PACKAGE" \
+      -trim="$TRIM_PACKAGE" \
+      "$OLD_COVERAGE_PATH" \
+      "$NEW_COVERAGE_PATH" \
+      "$CHANGED_FILES_PATH" \
+    > $COVERAGE_COMMENT_PATH
+else
+  # No baseline available - create an empty baseline for comparison
+  echo "::notice::Generating coverage report without baseline comparison"
+  touch "$OLD_COVERAGE_PATH"
+  go-coverage-report \
+      -root="$ROOT_PACKAGE" \
+      -trim="$TRIM_PACKAGE" \
+      "$OLD_COVERAGE_PATH" \
+      "$NEW_COVERAGE_PATH" \
+      "$CHANGED_FILES_PATH" \
+    > $COVERAGE_COMMENT_PATH
+
+  # Prepend a notice to the coverage report
+  echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired). Showing current coverage only." > /tmp/coverage-prefix.md
+  echo "" >> /tmp/coverage-prefix.md
+  cat $COVERAGE_COMMENT_PATH >> /tmp/coverage-prefix.md
+  mv /tmp/coverage-prefix.md $COVERAGE_COMMENT_PATH
+fi
 end_group
 
 if [ ! -s $COVERAGE_COMMENT_PATH ]; then

@@ -138,11 +138,26 @@ else
       "$CHANGED_FILES_PATH" \
     > $COVERAGE_COMMENT_PATH
 
-  # Prepend a notice to the coverage report
-  echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired). Showing current coverage only." > /tmp/coverage-prefix.md
-  echo "" >> /tmp/coverage-prefix.md
-  cat $COVERAGE_COMMENT_PATH >> /tmp/coverage-prefix.md
-  mv /tmp/coverage-prefix.md $COVERAGE_COMMENT_PATH
+  # Only prepend warning if there's actual coverage data to show
+  if [ -s $COVERAGE_COMMENT_PATH ]; then
+    echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired). Showing current coverage for changed files only." > /tmp/coverage-prefix.md
+    echo "" >> /tmp/coverage-prefix.md
+    cat $COVERAGE_COMMENT_PATH >> /tmp/coverage-prefix.md
+    mv /tmp/coverage-prefix.md $COVERAGE_COMMENT_PATH
+  else
+    # No changed files - provide overall coverage summary instead
+    echo "::notice::No changed Go files detected, calculating overall coverage"
+    TOTAL_COVERAGE=$(go tool cover -func="$NEW_COVERAGE_PATH" | grep total | awk '{print $3}')
+    if [ -n "$TOTAL_COVERAGE" ]; then
+      echo "## Code Coverage Report" > $COVERAGE_COMMENT_PATH
+      echo "" >> $COVERAGE_COMMENT_PATH
+      echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired)." >> $COVERAGE_COMMENT_PATH
+      echo "" >> $COVERAGE_COMMENT_PATH
+      echo "**Overall coverage:** $TOTAL_COVERAGE" >> $COVERAGE_COMMENT_PATH
+      echo "" >> $COVERAGE_COMMENT_PATH
+      echo "_No Go files were changed in this PR._" >> $COVERAGE_COMMENT_PATH
+    fi
+  fi
 fi
 end_group
 

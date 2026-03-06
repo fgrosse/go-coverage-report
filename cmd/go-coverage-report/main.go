@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -75,6 +76,12 @@ func programArgs() (oldCov, newCov, changedFile string, opts options) {
 	return args[0], args[1], args[2], opts
 }
 
+// isMockFile reports whether filePath is a mockery-generated file.
+func isMockFile(filePath string) bool {
+	base := path.Base(filePath)
+	return strings.HasSuffix(strings.TrimSuffix(base, ".go"), "_mock")
+}
+
 func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 	oldCov, err := ParseCoverage(oldCovPath)
 	if err != nil {
@@ -90,6 +97,17 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 	if err != nil {
 		return fmt.Errorf("failed to load changed files: %w", err)
 	}
+
+	oldCov.ExcludeMockFiles()
+	newCov.ExcludeMockFiles()
+
+	filtered := changedFiles[:0]
+	for _, f := range changedFiles {
+		if !isMockFile(f) {
+			filtered = append(filtered, f)
+		}
+	}
+	changedFiles = filtered
 
 	if len(changedFiles) == 0 {
 		log.Println("Skipping report since there are no changed files")

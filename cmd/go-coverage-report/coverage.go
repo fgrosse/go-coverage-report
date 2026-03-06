@@ -76,6 +76,19 @@ func (c *Coverage) ByPackage() map[string]*Coverage {
 	return pkgCovs
 }
 
+// ExcludeMockFiles removes mockery-generated files (*_mock.go) and adjusts
+// the aggregate statement counts accordingly.
+func (c *Coverage) ExcludeMockFiles() {
+	for name, p := range c.Files {
+		if isMockFile(name) {
+			c.TotalStmt -= p.TotalStmt
+			c.CoveredStmt -= p.CoveredStmt
+			c.MissedStmt -= p.MissedStmt
+			delete(c.Files, name)
+		}
+	}
+}
+
 func (c *Coverage) TrimPrefix(prefix string) {
 	for name, cov := range c.Files {
 		delete(c.Files, cov.FileName)

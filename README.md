@@ -100,6 +100,7 @@ jobs:
       contents:      read
       actions:       read  # to download code coverage results from "test" job
       pull-requests: write # write permission needed to comment on PR
+      issues:        write # write permission needed to comment on PR (gh pr comment uses the issues API)
     steps:
       - uses: fgrosse/go-coverage-report@v1.1.1 # Consider using a Git revision for maximum security
         with:

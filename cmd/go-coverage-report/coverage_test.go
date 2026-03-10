@@ -31,8 +31,8 @@ func TestCoverage_ByPackage(t *testing.T) {
 	assert.EqualValues(t, 10, pkgCov.MissedStmt)
 }
 
-func TestCoverage_ByPackage_DuplicatedBlocks__TotalBlockValueReported(t *testing.T) {
-	cov, err := ParseCoverage("testdata/coverage-3.txt")
+func TestCoverage_ByPackage_DuplicatedBlocks_TotalBlockValueReported(t *testing.T) {
+	cov, err := ParseCoverage("testdata/03-coverage-with-duplicate-blocks.txt")
 	require.NoError(t, err)
 
 	pkgs := cov.ByPackage()
@@ -46,7 +46,7 @@ func TestCoverage_ByPackage_DuplicatedBlocks__TotalBlockValueReported(t *testing
 }
 
 func TestCoverage_ByFile_DuplicatedBlocks_TotalBlockValueReported(t *testing.T) {
-	cov, err := ParseCoverage("testdata/coverage-3.txt")
+	cov, err := ParseCoverage("testdata/03-coverage-with-duplicate-blocks.txt")
 	require.NoError(t, err)
 
 	profile := cov.Files["github.com/fgrosse/database/cRepo.go"]

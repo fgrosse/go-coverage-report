@@ -33,7 +33,6 @@ func TestCoverage_ByPackage(t *testing.T) {
 }
 
 func TestCoverage_ByPackageFiltered(t *testing.T) {
-
 	regex := regexp.MustCompile(".*max_.*.go")
 	cov, err := ParseCoverage("testdata/01-new-coverage.txt", regex)
 	require.NoError(t, err)

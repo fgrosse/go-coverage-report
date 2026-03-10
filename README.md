@@ -153,7 +153,7 @@ inputs:
     description: Trim a prefix in the "Impacted Packages" column of the markdown report.
     required: false
 
-  exclude-filter:
+  exclude:
     description: Exclude files matching the given regular expression from the report.
     required: false
     

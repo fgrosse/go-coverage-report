@@ -117,33 +117,28 @@ fi
 end_group
 
 start_group "Compare code coverage results"
-if [ "$BASELINE_AVAILABLE" = "true" ]; then
-  # Normal comparison mode with baseline
-  go-coverage-report \
-      -root="$ROOT_PACKAGE" \
-      -trim="$TRIM_PACKAGE" \
-      "$OLD_COVERAGE_PATH" \
-      "$NEW_COVERAGE_PATH" \
-      "$CHANGED_FILES_PATH" \
-    > $COVERAGE_COMMENT_PATH
-else
-  # No baseline available - create an empty baseline for comparison
+if [ "$BASELINE_AVAILABLE" = "false" ]; then
+  # No baseline available - create an empty one for comparison
   echo "::notice::Generating coverage report without baseline comparison"
   touch "$OLD_COVERAGE_PATH"
-  go-coverage-report \
-      -root="$ROOT_PACKAGE" \
-      -trim="$TRIM_PACKAGE" \
-      "$OLD_COVERAGE_PATH" \
-      "$NEW_COVERAGE_PATH" \
-      "$CHANGED_FILES_PATH" \
-    > $COVERAGE_COMMENT_PATH
+fi
 
+go-coverage-report \
+    -root="$ROOT_PACKAGE" \
+    -trim="$TRIM_PACKAGE" \
+    "$OLD_COVERAGE_PATH" \
+    "$NEW_COVERAGE_PATH" \
+    "$CHANGED_FILES_PATH" \
+  > $COVERAGE_COMMENT_PATH
+
+if [ "$BASELINE_AVAILABLE" = "false" ]; then
   # Only prepend warning if there's actual coverage data to show
   if [ -s $COVERAGE_COMMENT_PATH ]; then
-    echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired). Showing current coverage for changed files only." > /tmp/coverage-prefix.md
-    echo "" >> /tmp/coverage-prefix.md
-    cat $COVERAGE_COMMENT_PATH >> /tmp/coverage-prefix.md
-    mv /tmp/coverage-prefix.md $COVERAGE_COMMENT_PATH
+    mv $COVERAGE_COMMENT_PATH $COVERAGE_COMMENT_PATH.tmp
+    echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired). Showing current coverage for changed files only." > $COVERAGE_COMMENT_PATH
+    echo "" >> $COVERAGE_COMMENT_PATH
+    cat $COVERAGE_COMMENT_PATH.tmp >> $COVERAGE_COMMENT_PATH
+    rm $COVERAGE_COMMENT_PATH.tmp
   else
     # No changed Go files - skip posting a comment since there's nothing to report
     echo "::notice::No changed Go files detected and no baseline available - skipping coverage comment"

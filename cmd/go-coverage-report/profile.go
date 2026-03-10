@@ -120,6 +120,7 @@ func ParseProfilesFromReader(rd io.Reader, exclude *regexp.Regexp) ([]*Profile, 
 			p.Blocks[j] = b
 			j++
 		}
+		p.Blocks = p.Blocks[:j]
 
 		for _, b := range p.Blocks {
 			p.TotalStmt += int64(b.NumStmt)
@@ -129,8 +130,6 @@ func ParseProfilesFromReader(rd io.Reader, exclude *regexp.Regexp) ([]*Profile, 
 			}
 		}
 		p.MissedStmt = p.TotalStmt - p.CoveredStmt
-
-		p.Blocks = p.Blocks[:j]
 	}
 	// Generate a sorted slice.
 	profiles := make([]*Profile, 0, len(files))

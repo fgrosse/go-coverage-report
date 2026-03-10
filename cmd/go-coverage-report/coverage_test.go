@@ -46,3 +46,30 @@ func TestCoverage_ByPackageFiltered(t *testing.T) {
 	assert.EqualValues(t, 42, pkgCov.CoveredStmt)
 	assert.EqualValues(t, 10, pkgCov.MissedStmt)
 }
+
+func TestCoverage_ByPackage_DuplicatedBlocks_TotalBlockValueReported(t *testing.T) {
+	cov, err := ParseCoverage("testdata/03-coverage-with-duplicate-blocks.txt")
+	require.NoError(t, err)
+
+	pkgs := cov.ByPackage()
+
+	pkgCov := pkgs["github.com/fgrosse/database"]
+	assert.NotNil(t, pkgCov)
+	assert.EqualValues(t, 617, pkgCov.TotalStmt)
+	assert.EqualValues(t, 437, pkgCov.CoveredStmt)
+	assert.EqualValues(t, 180, pkgCov.MissedStmt)
+	assert.InDelta(t, 70.83, pkgCov.Percent(), 0.01)
+}
+
+func TestCoverage_ByFile_DuplicatedBlocks_TotalBlockValueReported(t *testing.T) {
+	cov, err := ParseCoverage("testdata/03-coverage-with-duplicate-blocks.txt")
+	require.NoError(t, err)
+
+	profile := cov.Files["github.com/fgrosse/database/cRepo.go"]
+
+	assert.NotNil(t, profile)
+	assert.EqualValues(t, 42, profile.TotalStmt)
+	assert.EqualValues(t, 38, profile.CoveredStmt)
+	assert.EqualValues(t, 4, profile.MissedStmt)
+	assert.InDelta(t, 90.47, profile.CoveragePercent(), 0.01)
+}

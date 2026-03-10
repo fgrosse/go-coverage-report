@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Fix statement count being incorrect due to duplicate blocks (fgrosse/go-coverage-report#72)
 - Add graceful fallback when baseline coverage artifact is unavailable/expired (fgrosse/go-coverage-report#71)
 
 ## [v1.2.0] - 2024-08-28

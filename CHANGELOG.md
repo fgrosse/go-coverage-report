@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+_Nothing yet_
+
+## [v1.3.0] - 2026-03-11
 - Add `event-name` and `target-branch` inputs to support workflows triggered by events other than `push` (fgrosse/go-coverage-report#58)
 - Fix statement count being incorrect due to duplicate blocks (fgrosse/go-coverage-report#72)
 - Add graceful fallback when baseline coverage artifact is unavailable/expired (fgrosse/go-coverage-report#71)
@@ -32,7 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.0.0] - 2024-03-18
 - Initial release
 
-[Unreleased]: https://github.com/fgrosse/go-coverage-report/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/fgrosse/go-coverage-report/compare/v1.3.0...HEAD
+[v1.3.0]: https://github.com/fgrosse/go-coverage-report/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/fgrosse/go-coverage-report/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/fgrosse/go-coverage-report/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/fgrosse/go-coverage-report/compare/v1.0.2...v1.1.0

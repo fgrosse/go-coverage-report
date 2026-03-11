@@ -32,6 +32,7 @@ You can use the following environment variables to configure the script:
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
 - ROOT_PACKAGE: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
 - TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
+- EXCLUDE: Exclude files matching the given regular expression from the report (optional)
 - SKIP_COMMENT: Skip creating or updating the pull request comment (default: false)
 "
 
@@ -126,6 +127,7 @@ fi
 go-coverage-report \
     -root="$ROOT_PACKAGE" \
     -trim="$TRIM_PACKAGE" \
+    ${EXCLUDE:+-exclude="$EXCLUDE"} \
     "$OLD_COVERAGE_PATH" \
     "$NEW_COVERAGE_PATH" \
     "$CHANGED_FILES_PATH" \

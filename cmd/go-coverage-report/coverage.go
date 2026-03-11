@@ -2,6 +2,7 @@ package main
 
 import (
 	"path"
+	"regexp"
 
 	"github.com/pkg/errors"
 )
@@ -13,8 +14,8 @@ type Coverage struct {
 	MissedStmt  int64
 }
 
-func ParseCoverage(filename string) (*Coverage, error) {
-	pp, err := ParseProfiles(filename)
+func ParseCoverage(filename string, exclude *regexp.Regexp) (*Coverage, error) {
+	pp, err := ParseProfiles(filename, exclude)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse profiles")
 	}

@@ -185,6 +185,30 @@ inputs:
 This action provides the following outputs:
 
 - `coverage_report`: The generated coverage report in Markdown format.
+- `total_coverage`: New overall test coverage percentage (e.g. `"85.23"`).
+- `coverage_delta`: Change in coverage vs. the baseline (e.g. `"-2.13"`). Positive = increase.
+- `coverage_trend`: Direction of change — `"increased"`, `"decreased"`, or `"no change"`.
+- `total_statements`: Total number of statements in the new coverage profile.
+- `covered_statements`: Number of covered statements.
+- `missed_statements`: Number of missed (uncovered) statements.
+
+### Using outputs in downstream steps
+
+```yaml
+- uses: fgrosse/go-coverage-report@v1
+  id: coverage
+
+- name: Fail if coverage drops
+  if: ${{ steps.coverage.outputs.coverage_trend == 'decreased' }}
+  run: echo "Coverage decreased!" && exit 1
+
+- name: Enforce minimum coverage
+  run: |
+    COV="${{ steps.coverage.outputs.total_coverage }}"
+    if (( $(echo "$COV < 80.0" | bc -l) )); then
+      echo "Coverage $COV% is below 80%" && exit 1
+    fi
+```
 
 ## Limitations
 
@@ -218,7 +242,6 @@ A list of all available versions can be found at the [releases page][releases].
 ## Authors
 
 - **Friedrich Große** - *Initial work* - [fgrosse](https://github.com/fgrosse)
-
 - See also the list of [contributors][contributors] who participated in this project.
 
 ## License

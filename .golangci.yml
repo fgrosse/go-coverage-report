@@ -1,10 +1,68 @@
+version: "2"
+
+run:
+  modules-download-mode: readonly
+
 linters:
-  disable-all: true
+  default: none
   enable:
-    - gosimple    # Linter for Go source code that specializes in simplifying a code
-    - gofmt       # Gofmt checks whether code was gofmt-ed. By default, this tool runs with -s option to check for code simplification
-    - govet       # Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
-    - ineffassign # Detects when assignments to existing variables are not used
-    - misspell    # Finds commonly misspelled English words in comments
-    - unconvert   # Remove unnecessary type conversions
-    - unused      # Checks Go code for unused constants, variables, functions and types
+    - gocritic
+    - godot
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - nestif
+    - revive
+    - staticcheck
+    - unconvert
+    - unused
+    - wastedassign
+
+  settings:
+    misspell:
+      locale: US
+    
+    revive:
+      enable-all-rules: true
+      rules:
+      - name: line-length-limit
+        arguments: [ 160 ]
+      - name: add-constant
+        disabled: true
+      - name: enforce-switch-style
+        disabled: true
+      - name: unused-receiver
+        disabled: true
+      - name: cognitive-complexity
+        disabled: true
+      - name: cyclomatic
+        disabled: true
+      - name: deep-exit
+        disabled: true
+      - name: function-result-limit
+        disabled: true
+
+    gosec:
+      excludes:
+        - G304 # file path provided as argument to command execution functions should not be considered a security issue in this context.
+
+  exclusions:
+    warn-unused: true
+    presets: [ ] # no preset exclusion rules
+    
+    rules:
+    
+    # Allow longer lines in main.go as its often required for flag definitions and usage messages.
+    - linters: [ revive ]
+      text: "line-length-limit:"
+      path: "main.go$"
+
+    # Allow longer lines in test files as its often required for test assertions.
+    - linters: [ revive ]
+      text: "line-length-limit:"
+      path: ".+_test.go$"
+
+    # profile.go is copied from golang.org/x/tools/cover/profile.go and should not be modified.
+    - linters: [ revive ]
+      path: 'profile\.go$'

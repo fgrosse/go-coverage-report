@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix statement count being incorrect due to duplicate blocks (fgrosse/go-coverage-report#72)
 - Add graceful fallback when baseline coverage artifact is unavailable/expired (fgrosse/go-coverage-report#71)
 - Add `--exclude` flag to exclude files matching a regular expression from the report (fgrosse/go-coverage-report#59)
+- Add structured outputs (`total_coverage`, `coverage_delta`, `coverage_trend`, `total_statements`, `covered_statements`, `missed_statements`) for use in downstream steps (fgrosse/go-coverage-report#64)
 
 ## [v1.2.0] - 2024-08-28
 - Add input to configure GitHub Actions workflow filename (fgrosse/go-coverage-report#44)

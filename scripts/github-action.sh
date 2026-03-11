@@ -126,14 +126,20 @@ if [ "$BASELINE_AVAILABLE" = "false" ]; then
   touch "$OLD_COVERAGE_PATH"
 fi
 
+METRICS_OUTPUT=$(mktemp)
+
 go-coverage-report \
     -root="$ROOT_PACKAGE" \
     -trim="$TRIM_PACKAGE" \
     ${EXCLUDE:+-exclude="$EXCLUDE"} \
+    -metrics-file="$METRICS_OUTPUT" \
     "$OLD_COVERAGE_PATH" \
     "$NEW_COVERAGE_PATH" \
     "$CHANGED_FILES_PATH" \
   > $COVERAGE_COMMENT_PATH
+
+cat "$METRICS_OUTPUT" >> "$GITHUB_OUTPUT"
+rm -f "$METRICS_OUTPUT"
 
 if [ "$BASELINE_AVAILABLE" = "false" ]; then
   # Only prepend warning if there's actual coverage data to show

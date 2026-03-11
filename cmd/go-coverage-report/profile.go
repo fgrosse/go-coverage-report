@@ -212,7 +212,7 @@ func (b blocksByStart) Less(i, j int) bool {
 
 // Boundary represents the position in a source file of the beginning or end of a
 // block as reported by the coverage profile. In HTML mode, it will correspond to
-// the opening or closing of a <span> tag and will be used to colorize the source
+// the opening or closing of a <span> tag and will be used to colorize the source.
 type Boundary struct {
 	Offset int     // Location as a byte offset in the source file.
 	Start  bool    // Is this the start of a block?

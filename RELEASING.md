@@ -52,14 +52,18 @@ git push origin vX.Y.Z
 
 ### 5. Run goreleaser
 
+Extract the release notes for the current version from `CHANGELOG.md` and pass them to goreleaser:
+
 ```bash
-goreleaser release --clean
+VERSION=vX.Y.Z
+awk "/^## \[$VERSION\]/{found=1; next} /^## \[v/{if(found) exit} found" CHANGELOG.md > /tmp/release-notes.md
+goreleaser release --clean --release-notes=/tmp/release-notes.md
 ```
 
 This will:
 - Build binaries for Linux, macOS, and Windows
 - Create tarballs and a `checksums.txt`
-- Publish a GitHub Release with the artifacts and changelog
+- Publish a GitHub Release using the curated `CHANGELOG.md` notes
 
 ## Checklist
 
@@ -68,4 +72,4 @@ This will:
 - [ ] `README.md` version references bumped
 - [ ] Changes committed and pushed to `main`
 - [ ] Signed tag created and pushed (pointing to the version-bump commit)
-- [ ] `goreleaser release --clean` run successfully
+- [ ] `goreleaser release --clean --release-notes=/tmp/release-notes.md` run successfully

@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Add `event-name` and `target-branch` inputs to support workflows triggered by events other than `push` (fgrosse/go-coverage-report#58)
 - Fix statement count being incorrect due to duplicate blocks (fgrosse/go-coverage-report#72)
 - Add graceful fallback when baseline coverage artifact is unavailable/expired (fgrosse/go-coverage-report#71)
 - Add `--exclude` flag to exclude files matching a regular expression from the report (fgrosse/go-coverage-report#59)

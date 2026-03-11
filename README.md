@@ -165,6 +165,19 @@ inputs:
       You can aso just pass the name of the Workflow file directly (e.g. "my-workflow.yml").
     default: ${{ github.workflow_ref }}
     required: false
+
+  event-name:
+    description: "The event that triggered the workflow used to filter baseline runs."
+    default: "push"
+    required: false
+
+  target-branch:
+    description: |
+      The base branch to compare the coverage results against.
+      Defaults to github.base_ref, which is only set on pull_request events.
+      For other event types (e.g. push, schedule), set this explicitly.
+    default: ${{ github.base_ref }}
+    required: false
 ```
 
 ### Outputs

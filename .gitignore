@@ -1,3 +1,4 @@
 dist/
 .github/outputs/
 .claude/settings.local.json
+.envrc

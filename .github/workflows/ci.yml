@@ -54,9 +54,7 @@ jobs:
     needs: unit_tests
     permissions:
       # Grant permission to add comments to the PR.
-      # Note: gh pr comment uses the issues comments API, so issues: write is required.
       pull-requests: write
-      issues: write
     steps:
       # Normally,users of the action don't have to check out the source code or setup Go.
       # We need this here however because we are using a local action.yml.

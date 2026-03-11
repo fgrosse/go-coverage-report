@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -44,6 +45,29 @@ _Please note that the "Total", "Covered", and "Missed" counts above refer to ***
 
 </details>`
 	assert.Equal(t, expected, actual)
+}
+
+func TestWriteMetrics(t *testing.T) {
+	oldCov, err := ParseCoverage("testdata/01-old-coverage.txt", nil)
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/01-new-coverage.txt", nil)
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/01-changed-files.json", "github.com/fgrosse/prioqueue")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	path := t.TempDir() + "/metrics.txt"
+
+	err = report.WriteMetrics(path)
+	require.NoError(t, err)
+
+	content, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	expected := "total_coverage=90.20\ncoverage_delta=-9.80\ncoverage_trend=decreased\ntotal_statements=102\ncovered_statements=92\nmissed_statements=10\n"
+	assert.Equal(t, expected, string(content))
 }
 
 func TestReport_Markdown_OnlyChangedUnitTests(t *testing.T) {

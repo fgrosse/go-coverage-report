@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -16,7 +17,7 @@ type Report struct {
 }
 
 func NewReport(oldCov, newCov *Coverage, changedFiles []string) *Report {
-	sort.Strings(changedFiles)
+	slices.Sort(changedFiles)
 	return &Report{
 		Old:             oldCov,
 		New:             newCov,
@@ -37,7 +38,7 @@ func changedPackages(changedFiles []string) []string {
 		result = append(result, pkg)
 	}
 
-	sort.Strings(result)
+	slices.Sort(result)
 
 	return result
 }
@@ -66,7 +67,6 @@ func (r *Report) Title() string {
 		case newP < oldP:
 			numDecrease++
 		}
-
 	}
 
 	switch {
@@ -224,6 +224,32 @@ func (r *Report) TrimPrefix(prefix string) {
 
 	r.Old.TrimPrefix(prefix)
 	r.New.TrimPrefix(prefix)
+}
+
+func (r *Report) WriteMetrics(path string) error {
+	newPct := round(r.New.Percent(), 2)
+	oldPct := round(r.Old.Percent(), 2)
+	delta := round(newPct-oldPct, 2)
+
+	var trend string
+	switch {
+	case delta > 0:
+		trend = "increased"
+	case delta < 0:
+		trend = "decreased"
+	default:
+		trend = "no change"
+	}
+
+	content := strings.Join([]string{
+		fmt.Sprintf("total_coverage=%.2f", newPct),
+		fmt.Sprintf("coverage_delta=%.2f", delta),
+		fmt.Sprintf("coverage_trend=%s", trend),
+		fmt.Sprintf("total_statements=%d", r.New.TotalStmt),
+		fmt.Sprintf("covered_statements=%d", r.New.CoveredStmt),
+		fmt.Sprintf("missed_statements=%d", r.New.MissedStmt),
+	}, "\n") + "\n"
+	return os.WriteFile(path, []byte(content), 0600)
 }
 
 func trimPrefix(name, prefix string) string {

@@ -76,6 +76,24 @@ outputs:
   coverage_report:
     description: 'The generated coverage report in Markdown format.'
     value: ${{ steps.coverage.outputs.coverage_report }}
+  total_coverage:
+    description: 'New overall test coverage percentage (e.g. "85.23").'
+    value: ${{ steps.coverage.outputs.total_coverage }}
+  coverage_delta:
+    description: 'Change in coverage compared to the baseline (e.g. "-2.13"). Positive means increase.'
+    value: ${{ steps.coverage.outputs.coverage_delta }}
+  coverage_trend:
+    description: 'Direction of coverage change: "increased", "decreased", or "no change".'
+    value: ${{ steps.coverage.outputs.coverage_trend }}
+  total_statements:
+    description: 'Total number of statements in the new coverage profile.'
+    value: ${{ steps.coverage.outputs.total_statements }}
+  covered_statements:
+    description: 'Number of covered statements in the new coverage profile.'
+    value: ${{ steps.coverage.outputs.covered_statements }}
+  missed_statements:
+    description: 'Number of missed (uncovered) statements in the new coverage profile.'
+    value: ${{ steps.coverage.outputs.missed_statements }}
 
 runs:
   using: "composite"

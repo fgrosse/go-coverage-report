@@ -1,3 +1,4 @@
+// Package main implements the go-coverage-report command line tool which compares two Go coverage profiles and generates a report about the coverage changes for a list of changed files.
 package main
 
 import (
@@ -32,10 +33,11 @@ OPTIONS:
 `, filepath.Base(os.Args[0])))
 
 type options struct {
-	root    string
-	trim    string
-	format  string
-	exclude *regexp.Regexp
+	root        string
+	trim        string
+	format      string
+	exclude     *regexp.Regexp
+	metricsFile string
 }
 
 func main() {
@@ -50,6 +52,7 @@ func main() {
 	flag.String("trim", "", "trim a prefix in the \"Impacted Packages\" column of the markdown report")
 	flag.String("format", "markdown", "output format (currently only 'markdown' is supported)")
 	flag.String("exclude", "", "exclude files matching the given regular expression from the report")
+	flag.String("metrics-file", "", "write key=value coverage metrics to this file for GitHub Actions outputs")
 
 	err := run(programArgs())
 	if err != nil {
@@ -70,9 +73,10 @@ func programArgs() (oldCov, newCov, changedFile string, opts options) {
 	}
 
 	opts = options{
-		root:   flag.Lookup("root").Value.String(),
-		trim:   flag.Lookup("trim").Value.String(),
-		format: flag.Lookup("format").Value.String(),
+		root:        flag.Lookup("root").Value.String(),
+		trim:        flag.Lookup("trim").Value.String(),
+		format:      flag.Lookup("format").Value.String(),
+		metricsFile: flag.Lookup("metrics-file").Value.String(),
 	}
 
 	if s := flag.Lookup("exclude").Value.String(); s != "" {
@@ -111,6 +115,12 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 	report := NewReport(oldCov, newCov, changedFiles)
 	if opts.trim != "" {
 		report.TrimPrefix(opts.trim)
+	}
+
+	if opts.metricsFile != "" {
+		if err := report.WriteMetrics(opts.metricsFile); err != nil {
+			return fmt.Errorf("failed to write metrics: %w", err)
+		}
 	}
 
 	switch strings.ToLower(opts.format) {

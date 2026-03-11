@@ -8,10 +8,10 @@ import (
 )
 
 func TestReport_Markdown(t *testing.T) {
-	oldCov, err := ParseCoverage("testdata/01-old-coverage.txt")
+	oldCov, err := ParseCoverage("testdata/01-old-coverage.txt", nil)
 	require.NoError(t, err)
 
-	newCov, err := ParseCoverage("testdata/01-new-coverage.txt")
+	newCov, err := ParseCoverage("testdata/01-new-coverage.txt", nil)
 	require.NoError(t, err)
 
 	changedFiles, err := ParseChangedFiles("testdata/01-changed-files.json", "github.com/fgrosse/prioqueue")
@@ -47,10 +47,10 @@ _Please note that the "Total", "Covered", and "Missed" counts above refer to ***
 }
 
 func TestReport_Markdown_OnlyChangedUnitTests(t *testing.T) {
-	oldCov, err := ParseCoverage("testdata/02-old-coverage.txt")
+	oldCov, err := ParseCoverage("testdata/02-old-coverage.txt", nil)
 	require.NoError(t, err)
 
-	newCov, err := ParseCoverage("testdata/02-new-coverage.txt")
+	newCov, err := ParseCoverage("testdata/02-new-coverage.txt", nil)
 	require.NoError(t, err)
 
 	changedFiles, err := ParseChangedFiles("testdata/02-changed-files.json", "github.com/fgrosse/prioqueue")

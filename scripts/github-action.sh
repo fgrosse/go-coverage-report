@@ -33,6 +33,7 @@ You can use the following environment variables to configure the script:
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
 - ROOT_PACKAGE: The import path of the tested repository to add as a prefix to all paths of the changed files (optional)
 - TRIM_PACKAGE: Trim a prefix in the \"Impacted Packages\" column of the markdown report (optional)
+- EXCLUDE: Exclude files matching the given regular expression from the report (optional)
 - SKIP_COMMENT: Skip creating or updating the pull request comment (default: false)
 "
 
@@ -102,24 +103,51 @@ end_group
 
 start_group "Download code coverage results from target branch"
 LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_BASELINE_WORKFLOW" --event="$EVENT_NAME" --json=databaseId --limit=1 -q '.[] | .databaseId')
+BASELINE_AVAILABLE=true
 if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
-  echo "::error::No successful run found on the target branch"
-  exit 1
+  echo "::warning::No successful run found on the target branch"
+  BASELINE_AVAILABLE=false
+else
+  # Try to download the baseline artifact, but don't fail if it's unavailable
+  if gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID" 2>/dev/null; then
+    mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
+    rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
+  else
+    echo "::warning::Baseline coverage artifact not available (may be expired after 90 days)"
+    BASELINE_AVAILABLE=false
+  fi
 fi
-
-gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
-mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
-rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
 end_group
 
 start_group "Compare code coverage results"
+if [ "$BASELINE_AVAILABLE" = "false" ]; then
+  # No baseline available - create an empty one for comparison
+  echo "::notice::Generating coverage report without baseline comparison"
+  touch "$OLD_COVERAGE_PATH"
+fi
+
 go-coverage-report \
     -root="$ROOT_PACKAGE" \
     -trim="$TRIM_PACKAGE" \
+    ${EXCLUDE:+-exclude="$EXCLUDE"} \
     "$OLD_COVERAGE_PATH" \
     "$NEW_COVERAGE_PATH" \
     "$CHANGED_FILES_PATH" \
   > $COVERAGE_COMMENT_PATH
+
+if [ "$BASELINE_AVAILABLE" = "false" ]; then
+  # Only prepend warning if there's actual coverage data to show
+  if [ -s $COVERAGE_COMMENT_PATH ]; then
+    mv $COVERAGE_COMMENT_PATH $COVERAGE_COMMENT_PATH.tmp
+    echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired). Showing current coverage for changed files only." > $COVERAGE_COMMENT_PATH
+    echo "" >> $COVERAGE_COMMENT_PATH
+    cat $COVERAGE_COMMENT_PATH.tmp >> $COVERAGE_COMMENT_PATH
+    rm $COVERAGE_COMMENT_PATH.tmp
+  else
+    # No changed Go files - skip posting a comment since there's nothing to report
+    echo "::notice::No changed Go files detected and no baseline available - skipping coverage comment"
+  fi
+fi
 end_group
 
 if [ ! -s $COVERAGE_COMMENT_PATH ]; then

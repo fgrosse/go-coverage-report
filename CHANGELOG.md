@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-_Nothing yet_
+- Bump tj-actions/changed-files from 42.1.0 to 47.0.6 (fgrosse/go-coverage-report#82)
 
 ## [v1.3.0] - 2026-03-11
 - Add `event-name` and `target-branch` inputs to support workflows triggered by events other than `push` (fgrosse/go-coverage-report#58)

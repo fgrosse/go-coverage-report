@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -59,7 +59,7 @@ jobs:
       # Normally,users of the action don't have to check out the source code or setup Go.
       # We need this here however because we are using a local action.yml.
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup Go
         uses: actions/setup-go@v5
         with:

@@ -1,0 +1,4 @@
+[tools]
+go = "1.26"
+golangci-lint = "2.12.2"
+shellcheck = "0.11.0"

@@ -10,9 +10,6 @@ on:
 permissions:
   contents: read
 
-env:
-  GO_VERSION: "^1.26"
-
 jobs:
   dependencies:
     runs-on: ubuntu-latest
@@ -21,10 +18,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
+      # Installs the Go version pinned in mise.toml.
+      - name: Set up tools
+        uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
-          go-version: ${{ env.GO_VERSION }}
+          install_args: "go"
 
       - name: Verify dependencies
         run: |
@@ -42,32 +40,31 @@ jobs:
   golang-ci:
     name: Go Lint
     runs-on: ubuntu-latest
-    permissions:
-      checks: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+
+      # Installs the Go and golangci-lint versions pinned in mise.toml. Go is
+      # required here as well because golangci-lint shells out to "go list" to
+      # load the packages it analyses.
+      - name: Set up tools
+        uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: false # golangci-lint implements its own caching
+          install_args: "go golangci-lint"
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-        with:
-          version: v2.11.3
-          install-mode: "binary"
+        run: golangci-lint run ./...
 
   shell-check:
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
     steps:
       - name: Repository checkout
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
-      - name: Differential ShellCheck
-        uses: redhat-plumbers-in-action/differential-shellcheck@d965e66ec0b3b2f821f75c8eff9b12442d9a7d1e # v5.5.6
+      # Installs the shellcheck version pinned in mise.toml.
+      - name: Set up tools
+        uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          install_args: "shellcheck"
+
+      - name: ShellCheck
+        run: shellcheck scripts/*.sh

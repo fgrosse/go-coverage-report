@@ -228,6 +228,30 @@ This action provides the following outputs:
 * [testify](https://github.com/stretchr/testify) - A simple unit test library
 * _[and more][built-with]_
 
+## Development
+
+This repository uses [mise](https://mise.jdx.dev) to pin the versions of Go,
+`golangci-lint` and `shellcheck` that are used in CI, so local checks produce the
+same results as the pipeline. After
+[installing and activating mise](https://mise.jdx.dev/installing-mise.html), run
+the following in the repository root to install the pinned tools:
+
+```bash
+mise install
+```
+
+The tools are then on your `PATH` and you can run them as usual:
+
+```bash
+go test ./...
+golangci-lint run ./...
+shellcheck scripts/*.sh
+```
+
+The pinned versions live in [mise.toml](mise.toml). Our GitHub Actions workflows
+install the very same versions via [mise-action](https://github.com/jdx/mise-action),
+so bumping a tool in `mise.toml` is all that is needed to update it everywhere.
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of

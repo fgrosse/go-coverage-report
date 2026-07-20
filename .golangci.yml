@@ -28,6 +28,12 @@ linters:
       rules:
       - name: line-length-limit
         arguments: [ 160 ]
+      # Writes to a strings.Builder never fail, and a CLI cannot do anything
+      # useful about a failed write to stdout or stderr.
+      - name: unhandled-error
+        arguments:
+          - "fmt\\.Fprint(f|ln)?"
+          - "strings\\.Builder\\.Write(String)?"
       - name: add-constant
         disabled: true
       - name: enforce-switch-style

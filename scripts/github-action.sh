@@ -91,7 +91,7 @@ start_group(){
 }
 
 end_group(){
-    { set +x; return; } 2>/dev/null
+    { set +x; } 2>/dev/null
     echo "::endgroup::"
 }
 

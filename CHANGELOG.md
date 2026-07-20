@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Bump tj-actions/changed-files from 42.1.0 to 47.0.6 (fgrosse/go-coverage-report#82)
+- Fix the `::endgroup::` marker never being emitted, which left all GitHub Actions log groups of this action open (fgrosse/go-coverage-report#89)
 
 ## [v1.3.0] - 2026-03-11
 - Add `event-name` and `target-branch` inputs to support workflows triggered by events other than `push` (fgrosse/go-coverage-report#58)

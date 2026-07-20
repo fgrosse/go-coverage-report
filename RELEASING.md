@@ -63,7 +63,30 @@ goreleaser release --clean --release-notes=/tmp/release-notes.md
 This will:
 - Build binaries for Linux, macOS, and Windows
 - Create tarballs and a `checksums.txt`
-- Publish a GitHub Release using the curated `CHANGELOG.md` notes
+- Publish a GitHub Release with the built artifacts
+
+> **Important:** `--release-notes` does **not** currently reach the published
+> release. Our `.goreleaser.yaml` sets `changelog.disable: true`, which skips the
+> pipeline stage that applies the flag, so goreleaser publishes the release with an
+> **empty body**. This is silent, there is no warning.
+
+### 6. Set the release notes
+
+Because of the above, attach the notes explicitly after goreleaser has published:
+
+```bash
+gh release edit "$VERSION" --notes-file=/tmp/release-notes.md
+```
+
+### 7. Verify the release
+
+```bash
+gh release view "$VERSION" --json tagName,isDraft,body --jq '.tagName, .isDraft, .body'
+gh release view "$VERSION" --json assets --jq '.assets[].name'
+```
+
+Check that the body is not empty, that the release is not a draft, and that all
+nine assets are present (eight archives plus `checksums.txt`).
 
 ## Checklist
 
@@ -73,3 +96,5 @@ This will:
 - [ ] Changes committed and pushed to `main`
 - [ ] Signed tag created and pushed (pointing to the version-bump commit)
 - [ ] `goreleaser release --clean --release-notes=/tmp/release-notes.md` run successfully
+- [ ] Release notes attached with `gh release edit` (goreleaser leaves the body empty)
+- [ ] Release verified: non-empty body, not a draft, all nine assets uploaded

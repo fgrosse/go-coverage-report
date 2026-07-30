@@ -43,12 +43,36 @@ func changedPackages(changedFiles []string) []string {
 	return result
 }
 
+// Create set of all packages covered by any code coverage report
+func unionCoveredPackages(oldCovPkgs, newCovPkgs map[string]*Coverage) []string {
+	allCovPkgs := make([]string, 0)
+
+	for pkg, _ := range oldCovPkgs {
+		if pkg == "" {
+			continue
+		}
+		allCovPkgs = append(allCovPkgs, pkg)
+	}
+	for pkg, _ := range newCovPkgs {
+		if pkg == "" {
+			continue
+		}
+		allCovPkgs = append(allCovPkgs, pkg)
+	}
+
+	slices.Sort(allCovPkgs)
+	slices.Compact(allCovPkgs)
+
+	return allCovPkgs
+}
+
+
 func (r *Report) Title() string {
 	oldCovPkgs := r.Old.ByPackage()
 	newCovPkgs := r.New.ByPackage()
 
 	var numDecrease, numIncrease int
-	for _, pkg := range r.ChangedPackages {
+	for _, pkg := range unionCoveredPackages(oldCovPkgs, newCovPkgs) {
 		var oldPercent, newPercent float64
 
 		if cov, ok := oldCovPkgs[pkg]; ok {
@@ -90,7 +114,8 @@ func (r *Report) Markdown() string {
 
 	oldCovPkgs := r.Old.ByPackage()
 	newCovPkgs := r.New.ByPackage()
-	for _, pkg := range r.ChangedPackages {
+
+	for _, pkg := range unionCoveredPackages(oldCovPkgs, newCovPkgs) {
 		var oldPercent, newPercent float64
 
 		if cov, ok := oldCovPkgs[pkg]; ok {
@@ -99,6 +124,10 @@ func (r *Report) Markdown() string {
 
 		if cov, ok := newCovPkgs[pkg]; ok {
 			newPercent = cov.Percent()
+		}
+
+		if oldPercent == newPercent {
+			continue 
 		}
 
 		emoji, diffStr := emojiScore(newPercent, oldPercent)

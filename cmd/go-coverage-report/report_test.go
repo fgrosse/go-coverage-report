@@ -133,3 +133,36 @@ func TestReport_Markdown_OnlyDeletesUnitTests(t *testing.T) {
 </details>`
 	assert.Equal(t, expected, actual)
 }
+
+func TestReport_Markdown_ModifiedAnotherPackageTests(t *testing.T) {
+	oldCov, err := ParseCoverage("testdata/04-old-coverage.txt", nil)
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/04-new-coverage.txt", nil)
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/04-changed-files.json", "github.com/fgrosse/prioqueue")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **increase** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| github.com/fgrosse/prioqueue | 91.53% (**+1.33%**) | :thumbsup: |
+
+---
+
+<details>
+
+<summary>Coverage by file</summary>
+
+### Changed unit test files
+
+- github.com/fgrosse/prioqueue/internal/integration_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}

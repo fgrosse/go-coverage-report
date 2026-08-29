@@ -26,7 +26,6 @@ func TestReport_Markdown(t *testing.T) {
 | Impacted Packages | Coverage Δ | :robot: |
 |-------------------|------------|---------|
 | github.com/fgrosse/prioqueue | 90.20% (**-9.80%**) | :thumbsdown: |
-| github.com/fgrosse/prioqueue/foo/bar | 0.00% (ø) |  |
 
 ---
 
@@ -98,6 +97,71 @@ func TestReport_Markdown_OnlyChangedUnitTests(t *testing.T) {
 ### Changed unit test files
 
 - github.com/fgrosse/prioqueue/min_heap_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}
+
+func TestReport_Markdown_OnlyDeletesUnitTests(t *testing.T) {
+  oldCov, err := ParseCoverage("testdata/02-old-coverage.txt", nil)
+	require.NoError(t, err)
+
+	newCov := &Coverage{}
+
+	changedFiles, err := ParseChangedFiles("testdata/02-changed-files.json", "github.com/fgrosse/prioqueue")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **decrease** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| github.com/fgrosse/prioqueue | 0.00% (**-90.20%**) | :skull: :skull: :skull: :skull: :skull:  |
+
+---
+
+<details>
+
+<summary>Coverage by file</summary>
+
+### Changed unit test files
+
+- github.com/fgrosse/prioqueue/min_heap_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}
+
+func TestReport_Markdown_ModifiedAnotherPackageTests(t *testing.T) {
+	oldCov, err := ParseCoverage("testdata/04-old-coverage.txt", nil)
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/04-new-coverage.txt", nil)
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/04-changed-files.json", "github.com/fgrosse/prioqueue")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **increase** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| github.com/fgrosse/prioqueue | 91.53% (**+1.33%**) | :thumbsup: |
+
+---
+
+<details>
+
+<summary>Coverage by file</summary>
+
+### Changed unit test files
+
+- github.com/fgrosse/prioqueue/internal/integration_test.go
 
 </details>`
 	assert.Equal(t, expected, actual)

@@ -102,3 +102,40 @@ func TestReport_Markdown_OnlyChangedUnitTests(t *testing.T) {
 </details>`
 	assert.Equal(t, expected, actual)
 }
+
+// TestReport_Markdown_DeletedUnitTestFile reproduces
+// https://github.com/fgrosse/go-coverage-report/issues/42 for the case where the
+// deleted test file lives in the same directory (i.e. the same Go package) as the
+// code it covers, which is the common, idiomatic layout for Go tests.
+func TestReport_Markdown_DeletedUnitTestFile(t *testing.T) {
+	oldCov, err := ParseCoverage("testdata/04-old-coverage.txt", nil)
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/04-new-coverage.txt", nil)
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/04-changed-files.json", "github.com/fgrosse/prioqueue")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **decrease** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| github.com/fgrosse/prioqueue | 90.20% (**-8.82%**) | :thumbsdown: |
+
+---
+
+<details>
+
+<summary>Coverage by file</summary>
+
+### Changed unit test files
+
+- github.com/fgrosse/prioqueue/min_heap_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}

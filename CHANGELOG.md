@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Also report packages whose coverage changed without any of their files being changed, e.g. when running integration tests with `go test -coverpkg` (fgrosse/go-coverage-report#92)
+- Fix the `exclude` option not being applied to the list of changed files, which listed excluded files and their packages with 0% coverage in the report
 
 ## [v1.3.1] - 2026-07-20
 - Bump tj-actions/changed-files from 42.1.0 to 47.0.6 (fgrosse/go-coverage-report#82)

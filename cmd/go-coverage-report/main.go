@@ -1,4 +1,4 @@
-// Package main implements the go-coverage-report command line tool which compares two Go coverage profiles and generates a report about the coverage changes for a list of changed files.
+// Package main implements the go-coverage-report command line tool which compares two Go coverage profiles and generates a report about the coverage changes caused by a list of changed files.
 package main
 
 import (
@@ -14,8 +14,9 @@ import (
 var usage = strings.TrimSpace(fmt.Sprintf(`
 Usage: %s [OPTIONS] <OLD_COVERAGE_FILE> <NEW_COVERAGE_FILE> <CHANGED_FILES_FILE>
 
-Parse the OLD_COVERAGE_FILE and NEW_COVERAGE_FILE and compare the coverage of the
-files listed in CHANGED_FILES_FILE. The result is printed to stdout as a simple
+Parse the OLD_COVERAGE_FILE and NEW_COVERAGE_FILE and compare the coverage of all
+packages that contain files listed in CHANGED_FILES_FILE, as well as of all other
+packages whose coverage changed. The result is printed to stdout as a simple
 Markdown table with emojis indicating the coverage change per package.
 
 You can use the -root flag to add a prefix to all paths in the list of changed

@@ -204,11 +204,17 @@ func TestReport_ImpactedPackages(t *testing.T) {
 			changedFiles: []string{"example.com/a/a_test.go"},
 			expected:     []string{"example.com/a"},
 		},
-		"package removed from new coverage": {
+		"package missing in new coverage": {
 			oldProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 1\n",
 			newProfile:   "mode: set\n",
 			changedFiles: []string{"example.com/a/a_test.go"},
-			expected:     []string{"example.com/a", "example.com/b"},
+			expected:     []string{"example.com/a"},
+		},
+		"no baseline coverage": {
+			oldProfile:   "", // github-action.sh uses an empty file if the baseline is unavailable
+			newProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 1\n",
+			changedFiles: []string{"example.com/a/a_test.go"},
+			expected:     []string{"example.com/a"},
 		},
 	}
 

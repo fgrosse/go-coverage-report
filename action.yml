@@ -47,7 +47,10 @@ inputs:
     required: false
 
   exclude:
-    description: Exclude files matching the given regular expression from the report.
+    description: |
+      Exclude files matching the given regular expression from the report. The expression
+      is applied to the file names in the coverage profiles as well as to the changed files
+      (after the root-package prefix was added).
     required: false
 
   github-baseline-workflow-ref:

@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -174,6 +175,40 @@ func TestReport_Markdown_CoverPkg(t *testing.T) {
 ### Changed unit test files
 
 - example.com/demo/integration/integration_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}
+
+// TestReport_Markdown_CoverPkgExcluded uses the same profiles as
+// TestReport_Markdown_CoverPkg but excludes the integration tests from the
+// report. The coverage change of "calc" must still be reported.
+func TestReport_Markdown_CoverPkgExcluded(t *testing.T) {
+	exclude := regexp.MustCompile(`integration/`)
+
+	oldCov, err := ParseCoverage("testdata/05-old-coverage.txt", exclude)
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/05-new-coverage.txt", exclude)
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/05-changed-files.json", "example.com/demo")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, excludeFiles(changedFiles, exclude))
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **increase** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| example.com/demo/calc | 83.33% (**+50.00%**) | :star2: |
+
+---
+
+<details>
+
+<summary>Coverage by file</summary>
 
 </details>`
 	assert.Equal(t, expected, actual)

@@ -121,7 +121,9 @@ func (r *Report) Markdown() string {
 // The latter can only happen if tests in one package record coverage for
 // another package (e.g. via "go test -coverpkg"). Such packages must appear in
 // both coverage profiles, since a missing profile (e.g. no baseline) would
-// otherwise make every package look changed.
+// otherwise make every package look changed. Packages without statements in
+// both coverage profiles (e.g. packages that only contain tests) are omitted
+// since they have no coverage that could change.
 func (r *Report) impactedPackages(oldCovPkgs, newCovPkgs map[string]*Coverage) []string {
 	packages := slices.Clone(r.ChangedPackages)
 	for pkg, oldCov := range oldCovPkgs {
@@ -134,6 +136,11 @@ func (r *Report) impactedPackages(oldCovPkgs, newCovPkgs map[string]*Coverage) [
 			packages = append(packages, pkg)
 		}
 	}
+
+	packages = slices.DeleteFunc(packages, func(pkg string) bool {
+		oldCov, newCov := oldCovPkgs[pkg], newCovPkgs[pkg]
+		return (oldCov == nil || oldCov.TotalStmt == 0) && (newCov == nil || newCov.TotalStmt == 0)
+	})
 
 	slices.Sort(packages)
 	return packages

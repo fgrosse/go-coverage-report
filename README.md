@@ -35,7 +35,8 @@ The "Impacted Packages" table lists all packages that contain changed files. If 
 tests also record coverage for other packages than their own (e.g. integration tests
 that you run with `go test -coverpkg=./...`), a change can affect the coverage of
 packages that contain no changed files. Those packages are listed as well, but only
-if their coverage actually changed.
+if their coverage actually changed. Packages without any statements that could be
+covered (e.g. packages that only contain tests) are never listed.
 
 The last column is an emoji "score" that is based on the coverage change of the package.
 The following emojis are used:

@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -138,4 +139,103 @@ func TestReport_Markdown_DeletedUnitTestFile(t *testing.T) {
 
 </details>`
 	assert.Equal(t, expected, actual)
+}
+
+// TestReport_Markdown_CoverPkg uses profiles created via "go test -coverpkg=./..."
+// for a module with the packages "calc", "other" and "integration". The latter
+// contains only tests which exercise "calc". The only changed file extends
+// these integration tests, which increases the coverage of "calc".
+func TestReport_Markdown_CoverPkg(t *testing.T) {
+	oldCov, err := ParseCoverage("testdata/05-old-coverage.txt", nil)
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/05-new-coverage.txt", nil)
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/05-changed-files.json", "example.com/demo")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **increase** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| example.com/demo/calc | 83.33% (**+50.00%**) | :star2: |
+| example.com/demo/integration | 0.00% (ø) |  |
+
+---
+
+<details>
+
+<summary>Coverage by file</summary>
+
+### Changed unit test files
+
+- example.com/demo/integration/integration_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}
+
+func TestReport_ImpactedPackages(t *testing.T) {
+	cases := map[string]struct {
+		oldProfile   string
+		newProfile   string
+		changedFiles []string
+		expected     []string
+	}{
+		"package of changed file without coverage delta": {
+			oldProfile:   "mode: set\nexample.com/a/a.go:1.1,2.2 1 1\n",
+			newProfile:   "mode: set\nexample.com/a/a.go:1.1,2.2 1 1\n",
+			changedFiles: []string{"example.com/a/a.go"},
+			expected:     []string{"example.com/a"},
+		},
+		"package with coverage delta but without changed files": {
+			oldProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 0\n",
+			newProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 1\n",
+			changedFiles: []string{"example.com/a/a_test.go"},
+			expected:     []string{"example.com/a", "example.com/b"},
+		},
+		"package without coverage delta and without changed files": {
+			oldProfile:   "mode: set\nexample.com/c/c.go:1.1,2.2 1 1\n",
+			newProfile:   "mode: set\nexample.com/c/c.go:1.1,2.2 1 1\n",
+			changedFiles: []string{"example.com/a/a_test.go"},
+			expected:     []string{"example.com/a"},
+		},
+		"package missing in new coverage": {
+			oldProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 1\n",
+			newProfile:   "mode: set\n",
+			changedFiles: []string{"example.com/a/a_test.go"},
+			expected:     []string{"example.com/a"},
+		},
+		"no baseline coverage": {
+			oldProfile:   "", // github-action.sh uses an empty file if the baseline is unavailable
+			newProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 1\n",
+			changedFiles: []string{"example.com/a/a_test.go"},
+			expected:     []string{"example.com/a"},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			oldCov := parseCoverageString(t, c.oldProfile)
+			newCov := parseCoverageString(t, c.newProfile)
+
+			report := NewReport(oldCov, newCov, c.changedFiles)
+			actual := report.impactedPackages(oldCov.ByPackage(), newCov.ByPackage())
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func parseCoverageString(t *testing.T, profile string) *Coverage {
+	t.Helper()
+
+	profiles, err := ParseProfilesFromReader(strings.NewReader(profile), nil)
+	require.NoError(t, err)
+
+	return New(profiles)
 }

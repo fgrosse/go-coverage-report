@@ -70,6 +70,15 @@ inputs:
     default: ${{ github.workflow_ref }}
     required: false
 
+  baseline-lookback-days:
+    description: |
+      Only consider successful target-branch workflow runs created within this many
+      days when downloading baseline coverage. Needed because GitHub caps filtered
+      workflow-run searches at 1000 results, which can otherwise return a stale run
+      whose coverage artifact has expired.
+    required: false
+    default: '14'
+
 outputs:
   coverage_report:
     description: 'The generated coverage report in Markdown format.'
@@ -115,3 +124,4 @@ runs:
         TRIM_PACKAGE: ${{ inputs.trim }}
         MIN_COVERAGE_NEW_CODE: ${{ inputs.min-coverage-new-code }}
         USE_GIT_DIFF: ${{ inputs.use-git-diff }}
+        BASELINE_LOOKBACK_DAYS: ${{ inputs.baseline-lookback-days }}

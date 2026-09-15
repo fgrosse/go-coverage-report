@@ -35,6 +35,7 @@ You can use the following environment variables to configure the script:
 - SKIP_COMMENT: Skip creating or updating the pull request comment (default: false)
 - MIN_COVERAGE_NEW_CODE: Minimum coverage threshold for new code in percentage (default: 0, disabled)
 - USE_GIT_DIFF: Use git diff for line-level coverage calculation (default: true)
+- BASELINE_LOOKBACK_DAYS: Only consider target-branch runs created in this many days (default: 14)
 "
 
 if [[ $# != 3 ]]; then
@@ -52,6 +53,7 @@ COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
 COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
 MIN_COVERAGE_NEW_CODE=${MIN_COVERAGE_NEW_CODE:-0}
 USE_GIT_DIFF=${USE_GIT_DIFF:-true}
+BASELINE_LOOKBACK_DAYS=${BASELINE_LOOKBACK_DAYS:-14}
 
 OLD_COVERAGE_PATH=.github/outputs/old-coverage.txt
 NEW_COVERAGE_PATH=.github/outputs/new-coverage.txt
@@ -104,13 +106,36 @@ rm -r "/tmp/gh-run-download-$GITHUB_RUN_ID"
 end_group
 
 start_group "Download code coverage results from target branch"
-LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_BASELINE_WORKFLOW" --event=push --json=databaseId --limit=1 -q '.[] | .databaseId')
-if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
-  echo "::error::No successful run found on the target branch"
+# GitHub caps filtered workflow-run searches at 1000 results. An unbounded
+# list can return a stale run whose coverage artifact has already expired.
+if date -u -d "${BASELINE_LOOKBACK_DAYS} days ago" +%Y-%m-%d >/dev/null 2>&1; then
+  CREATED_SINCE=$(date -u -d "${BASELINE_LOOKBACK_DAYS} days ago" +%Y-%m-%d)
+else
+  CREATED_SINCE=$(date -u -v-"${BASELINE_LOOKBACK_DAYS}"d +%Y-%m-%d)
+fi
+
+echo "Looking for successful ${TARGET_BRANCH} runs of ${GITHUB_BASELINE_WORKFLOW} created on or after ${CREATED_SINCE}"
+RUN_IDS=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_BASELINE_WORKFLOW" --event=push --created=">=${CREATED_SINCE}" --json=databaseId --limit=20 -q '.[].databaseId')
+if [ -z "$RUN_IDS" ]; then
+  echo "::error::No successful run found on the target branch in the last ${BASELINE_LOOKBACK_DAYS} days"
   exit 1
 fi
 
-gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
+LAST_SUCCESSFUL_RUN_ID=""
+for RUN_ID in $RUN_IDS; do
+  if gh run download "$RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$RUN_ID"; then
+    LAST_SUCCESSFUL_RUN_ID=$RUN_ID
+    break
+  fi
+  echo "Skipping run ${RUN_ID} (no ${COVERAGE_ARTIFACT_NAME} artifact)"
+  rm -rf "/tmp/gh-run-download-$RUN_ID"
+done
+
+if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
+  echo "::error::No successful run on the target branch in the last ${BASELINE_LOOKBACK_DAYS} days had a ${COVERAGE_ARTIFACT_NAME} artifact"
+  exit 1
+fi
+
 mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
 rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
 end_group

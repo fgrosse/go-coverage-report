@@ -201,7 +201,10 @@ This action provides the following outputs:
 
 - Currently, code coverage profiles are uploaded as GitHub artifacts which automatically expire after 90 days.
   In a repository which receives changes only infrequently, this might lead to issues when trying to compare
-  the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).  
+  the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).
+- GitHub caps filtered workflow-run searches at 1000 results. Baseline lookup is therefore limited to recent
+  successful runs (default 14 days via `baseline-lookback-days`) so busy repositories do not pick a stale run
+  whose artifact has already expired.  
 - Support **for forks** is limited since the necessary `GITHUB_TOKEN` permissions don't allow to post comments to the
   pull request of the base repository (see fgrosse/go-coverage-report#15). If forks are important for you, this action
   might not be the best solution.

@@ -3,7 +3,7 @@ version: "2"
 linters:
   default: none
   enable:
-    - gosimple
+    - staticcheck
     - govet
     - ineffassign
     - misspell

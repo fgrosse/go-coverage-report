@@ -27,7 +27,6 @@ func TestReport_Markdown(t *testing.T) {
 | Impacted Packages | Coverage Δ | :robot: |
 |-------------------|------------|---------|
 | github.com/fgrosse/prioqueue | 90.20% (**-9.80%**) | :thumbsdown: |
-| github.com/fgrosse/prioqueue/foo/bar | 0.00% (ø) |  |
 
 ---
 
@@ -163,7 +162,6 @@ func TestReport_Markdown_CoverPkg(t *testing.T) {
 | Impacted Packages | Coverage Δ | :robot: |
 |-------------------|------------|---------|
 | example.com/demo/calc | 83.33% (**+50.00%**) | :star2: |
-| example.com/demo/integration | 0.00% (ø) |  |
 
 ---
 
@@ -196,24 +194,36 @@ func TestReport_ImpactedPackages(t *testing.T) {
 			oldProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 0\n",
 			newProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 1\n",
 			changedFiles: []string{"example.com/a/a_test.go"},
-			expected:     []string{"example.com/a", "example.com/b"},
+			expected:     []string{"example.com/b"},
 		},
 		"package without coverage delta and without changed files": {
 			oldProfile:   "mode: set\nexample.com/c/c.go:1.1,2.2 1 1\n",
 			newProfile:   "mode: set\nexample.com/c/c.go:1.1,2.2 1 1\n",
 			changedFiles: []string{"example.com/a/a_test.go"},
-			expected:     []string{"example.com/a"},
+			expected:     []string{},
 		},
 		"package missing in new coverage": {
 			oldProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 1\n",
 			newProfile:   "mode: set\n",
 			changedFiles: []string{"example.com/a/a_test.go"},
-			expected:     []string{"example.com/a"},
+			expected:     []string{},
 		},
 		"no baseline coverage": {
 			oldProfile:   "", // github-action.sh uses an empty file if the baseline is unavailable
 			newProfile:   "mode: set\nexample.com/b/b.go:1.1,2.2 1 1\n",
 			changedFiles: []string{"example.com/a/a_test.go"},
+			expected:     []string{},
+		},
+		"changed package without statements (e.g. only tests)": {
+			oldProfile:   "mode: set\n",
+			newProfile:   "mode: set\n",
+			changedFiles: []string{"example.com/a/a_test.go"},
+			expected:     []string{},
+		},
+		"changed package with statements but without coverage": {
+			oldProfile:   "mode: set\nexample.com/a/a.go:1.1,2.2 1 0\n",
+			newProfile:   "mode: set\nexample.com/a/a.go:1.1,2.2 1 0\n",
+			changedFiles: []string{"example.com/a/a.go"},
 			expected:     []string{"example.com/a"},
 		},
 	}

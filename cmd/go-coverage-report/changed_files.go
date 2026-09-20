@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
+	"slices"
 )
 
 func ParseChangedFiles(filename, prefix string) ([]string, error) {
@@ -23,4 +25,12 @@ func ParseChangedFiles(filename, prefix string) ([]string, error) {
 	}
 
 	return files, nil
+}
+
+func excludeFiles(files []string, exclude *regexp.Regexp) []string {
+	if exclude == nil {
+		return files
+	}
+
+	return slices.DeleteFunc(slices.Clone(files), exclude.MatchString)
 }

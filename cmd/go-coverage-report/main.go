@@ -113,6 +113,11 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 		return nil
 	}
 
+	// Excluding files only after the check above keeps the report for changes
+	// that only touch excluded files but still affect the coverage of other
+	// packages (e.g. integration tests run via "go test -coverpkg").
+	changedFiles = excludeFiles(changedFiles, opts.exclude)
+
 	report := NewReport(oldCov, newCov, changedFiles)
 	if opts.trim != "" {
 		report.TrimPrefix(opts.trim)

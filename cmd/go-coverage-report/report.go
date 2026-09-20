@@ -48,7 +48,7 @@ func (r *Report) Title() string {
 	newCovPkgs := r.New.ByPackage()
 
 	var numDecrease, numIncrease int
-	for _, pkg := range r.ChangedPackages {
+	for _, pkg := range r.impactedPackages(oldCovPkgs, newCovPkgs) {
 		var oldPercent, newPercent float64
 
 		if cov, ok := oldCovPkgs[pkg]; ok {
@@ -90,7 +90,7 @@ func (r *Report) Markdown() string {
 
 	oldCovPkgs := r.Old.ByPackage()
 	newCovPkgs := r.New.ByPackage()
-	for _, pkg := range r.ChangedPackages {
+	for _, pkg := range r.impactedPackages(oldCovPkgs, newCovPkgs) {
 		var oldPercent, newPercent float64
 
 		if cov, ok := oldCovPkgs[pkg]; ok {
@@ -114,6 +114,29 @@ func (r *Report) Markdown() string {
 	r.addDetails(report)
 
 	return report.String()
+}
+
+// impactedPackages returns the packages that contain changed files plus all
+// packages whose coverage changed without any of their files being changed.
+// The latter can only happen if tests in one package record coverage for
+// another package (e.g. via "go test -coverpkg"). Such packages must appear in
+// both coverage profiles, since a missing profile (e.g. no baseline) would
+// otherwise make every package look changed.
+func (r *Report) impactedPackages(oldCovPkgs, newCovPkgs map[string]*Coverage) []string {
+	packages := slices.Clone(r.ChangedPackages)
+	for pkg, oldCov := range oldCovPkgs {
+		newCov, ok := newCovPkgs[pkg]
+		if !ok || slices.Contains(packages, pkg) {
+			continue
+		}
+
+		if round(oldCov.Percent(), 2) != round(newCov.Percent(), 2) {
+			packages = append(packages, pkg)
+		}
+	}
+
+	slices.Sort(packages)
+	return packages
 }
 
 func (r *Report) addDetails(report *strings.Builder) {

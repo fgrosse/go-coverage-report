@@ -31,6 +31,12 @@ changed package is typically a better indicator of the quality of the changes.
 Additionally, looking at coverage changes by package is more motivating as code coverage improvements are more pronounced (i.e. typically larger percentage values) when zooming
 into the package level, instead of comparing changes on the project level.
 
+The "Impacted Packages" table lists all packages that contain changed files. If your
+tests also record coverage for other packages than their own (e.g. integration tests
+that you run with `go test -coverpkg=./...`), a change can affect the coverage of
+packages that contain no changed files. Those packages are listed as well, but only
+if their coverage actually changed.
+
 The last column is an emoji "score" that is based on the coverage change of the package.
 The following emojis are used:
 
@@ -219,6 +225,8 @@ This action provides the following outputs:
   pull request of the base repository (see fgrosse/go-coverage-report#15). If forks are important for you, this action
   might not be the best solution.
 - Packages with a name that differs from their directory on disk are not supported yet.
+- The "Coverage by file" section only lists changed files. Packages that are listed only because
+  their coverage changed (e.g. when using `go test -coverpkg`) have no per-file breakdown.
 - Requires `actions/upload-artifact` >= **v4** (see this [issue][upload-artifacts-issues]).
 
 ## Built With

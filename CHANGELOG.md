@@ -5,9 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Also report packages whose coverage changed without any of their files being changed, e.g. when running integration tests with `go test -coverpkg` (fgrosse/go-coverage-report#92)
-- Do not list packages without any statements (e.g. packages that only contain tests) in the "Impacted Packages" table
-- Fix the `exclude` option not being applied to the list of changed files, which listed excluded files and their packages with 0% coverage in the report
+- Also report packages whose coverage changed without any of their files being changed, e.g. when running integration tests with `go test -coverpkg` (fgrosse/go-coverage-report#102)
+- Do not list packages without any statements (e.g. packages that only contain tests) in the "Impacted Packages" table (fgrosse/go-coverage-report#103)
+- Fix the `exclude` option not being applied to the list of changed files, which listed excluded files and their packages with 0% coverage in the report (fgrosse/go-coverage-report#104)
 
 ## [v1.3.1] - 2026-07-20
 - Bump tj-actions/changed-files from 42.1.0 to 47.0.6 (fgrosse/go-coverage-report#82)

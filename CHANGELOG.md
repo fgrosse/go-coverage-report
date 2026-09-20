@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+_Nothing yet_
+
+## [v1.4.0] - 2026-09-20
 - Also report packages whose coverage changed without any of their files being changed, e.g. when running integration tests with `go test -coverpkg` (fgrosse/go-coverage-report#102)
 - Do not list packages without any statements (e.g. packages that only contain tests) in the "Impacted Packages" table (fgrosse/go-coverage-report#103)
 - Fix the `exclude` option not being applied to the list of changed files, which listed excluded files and their packages with 0% coverage in the report (fgrosse/go-coverage-report#104)
@@ -41,7 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.0.0] - 2024-03-18
 - Initial release
 
-[Unreleased]: https://github.com/fgrosse/go-coverage-report/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/fgrosse/go-coverage-report/compare/v1.4.0...HEAD
+[v1.4.0]: https://github.com/fgrosse/go-coverage-report/compare/v1.3.1...v1.4.0
 [v1.3.1]: https://github.com/fgrosse/go-coverage-report/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/fgrosse/go-coverage-report/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/fgrosse/go-coverage-report/compare/v1.1.1...v1.2.0

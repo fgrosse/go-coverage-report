@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-_Nothing yet_
+- Remove the documented limitation about packages whose name differs from their directory, which was never an actual limitation (fgrosse/go-coverage-report#13)
 
 ## [v1.4.0] - 2026-09-20
 - Also report packages whose coverage changed without any of their files being changed, e.g. when running integration tests with `go test -coverpkg` (fgrosse/go-coverage-report#102)

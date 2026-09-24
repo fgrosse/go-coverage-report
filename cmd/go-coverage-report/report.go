@@ -185,7 +185,7 @@ func (r *Report) addDetails(report *strings.Builder) {
 }
 
 // Markdown returns a single line describing the baseline, e.g.
-// "Compared to base commit 2eb52af (run [#8221109494](https://…))".
+// "Compared to commit 2eb52af (run [#8221109494](https://…))".
 func (b *Baseline) Markdown() string {
 	commit := b.Commit
 	if len(commit) > 7 {
@@ -200,7 +200,7 @@ func (b *Baseline) Markdown() string {
 		run = fmt.Sprintf(" (run #%s)", b.RunID)
 	}
 
-	return fmt.Sprintf("Compared to base commit %s%s", commit, run)
+	return fmt.Sprintf("Compared to commit %s%s", commit, run)
 }
 
 func (r *Report) addCodeFileDetails(report *strings.Builder, files []string) {

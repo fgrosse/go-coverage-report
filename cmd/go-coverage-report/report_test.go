@@ -298,7 +298,7 @@ func TestReport_Markdown_Baseline(t *testing.T) {
 
 <summary>Coverage details</summary>
 
-<sub>Compared to base commit 2eb52af (run [#8221109494](https://github.com/fgrosse/prioqueue/actions/runs/8221109494))</sub>
+<sub>Compared to commit 2eb52af (run [#8221109494](https://github.com/fgrosse/prioqueue/actions/runs/8221109494))</sub>
 
 Changed unit test files:
 - github.com/fgrosse/prioqueue/min_heap_test.go
@@ -312,9 +312,9 @@ func TestBaseline_Markdown(t *testing.T) {
 		baseline Baseline
 		expected string
 	}{
-		"commit only":        {Baseline{Commit: "2eb52af"}, "Compared to base commit 2eb52af"},
-		"run without url":    {Baseline{Commit: "2eb52af", RunID: "42"}, "Compared to base commit 2eb52af (run #42)"},
-		"full sha shortened": {Baseline{Commit: "2eb52af2e3c0", RunID: "42", RunURL: "https://x/42"}, "Compared to base commit 2eb52af (run [#42](https://x/42))"},
+		"commit only":        {Baseline{Commit: "2eb52af"}, "Compared to commit 2eb52af"},
+		"run without url":    {Baseline{Commit: "2eb52af", RunID: "42"}, "Compared to commit 2eb52af (run #42)"},
+		"full sha shortened": {Baseline{Commit: "2eb52af2e3c0", RunID: "42", RunURL: "https://x/42"}, "Compared to commit 2eb52af (run [#42](https://x/42))"},
 	}
 
 	for name, c := range cases {

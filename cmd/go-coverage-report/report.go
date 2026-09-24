@@ -14,6 +14,14 @@ type Report struct {
 	Old, New        *Coverage
 	ChangedFiles    []string
 	ChangedPackages []string
+	Baseline        *Baseline `json:",omitempty"`
+}
+
+// Baseline describes where the old coverage profile of the report came from.
+type Baseline struct {
+	Commit string // full or abbreviated commit SHA
+	RunID  string // ID of the workflow run that produced the old coverage (optional)
+	RunURL string // URL of that workflow run (optional)
 }
 
 func NewReport(oldCov, newCov *Coverage, changedFiles []string) *Report {
@@ -147,13 +155,15 @@ func (r *Report) impactedPackages(oldCovPkgs, newCovPkgs map[string]*Coverage) [
 }
 
 func (r *Report) addDetails(report *strings.Builder) {
-	fmt.Fprintln(report, "---")
-	fmt.Fprintln(report)
 	fmt.Fprintln(report, "<details>")
 	fmt.Fprintln(report)
 
-	fmt.Fprintln(report, "<summary>Coverage by file</summary>")
+	fmt.Fprintln(report, "<summary>Coverage details</summary>")
 	fmt.Fprintln(report)
+
+	if r.Baseline != nil && r.Baseline.Commit != "" {
+		fmt.Fprintf(report, "<sub>%s</sub>\n\n", r.Baseline.Markdown())
+	}
 
 	var codeFiles, unitTestFiles []string
 	for _, f := range r.ChangedFiles {
@@ -174,9 +184,26 @@ func (r *Report) addDetails(report *strings.Builder) {
 	fmt.Fprint(report, "</details>")
 }
 
+// Markdown returns a single line describing the baseline, e.g.
+// "Compared to commit 2eb52af (run [#8221109494](https://…))".
+func (b *Baseline) Markdown() string {
+	commit := b.Commit
+	if len(commit) > 7 {
+		commit = commit[:7]
+	}
+
+	var run string
+	switch {
+	case b.RunID != "" && b.RunURL != "":
+		run = fmt.Sprintf(" (run [#%s](%s))", b.RunID, b.RunURL)
+	case b.RunID != "":
+		run = fmt.Sprintf(" (run #%s)", b.RunID)
+	}
+
+	return fmt.Sprintf("Compared to commit %s%s", commit, run)
+}
+
 func (r *Report) addCodeFileDetails(report *strings.Builder, files []string) {
-	fmt.Fprintln(report, "### Changed files (no unit tests)")
-	fmt.Fprintln(report)
 	fmt.Fprintln(report, "| Changed File | Coverage Δ | Total | Covered | Missed | :robot: |")
 	fmt.Fprintln(report, "|--------------|------------|-------|---------|--------|---------|")
 
@@ -225,8 +252,7 @@ func (r *Report) addCodeFileDetails(report *strings.Builder, files []string) {
 }
 
 func (r *Report) addTestFileDetails(report *strings.Builder, files []string) {
-	fmt.Fprintln(report, "### Changed unit test files")
-	fmt.Fprintln(report)
+	fmt.Fprintln(report, "Changed unit test files:")
 
 	for _, name := range files {
 		fmt.Fprintf(report, "- %s\n", name)

@@ -5,7 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-_Nothing yet_
+- **Behavior change:** By default, the baseline coverage is now taken from the latest successful run for the base commit
+  of the pull request (new `baseline-sha` input, defaults to `github.event.pull_request.base.sha`) instead of the latest
+  successful run on the target branch. If there is no such run, the action falls back to the latest successful run on the
+  target branch and emits a warning. Set `baseline-sha` to `""` to restore the previous behavior (fgrosse/go-coverage-report#110)
+- Add `baseline-run-id` input to use the coverage of an exact workflow run as baseline (fgrosse/go-coverage-report#110)
+- Improve diagnostics when no baseline coverage is available: warnings and the pull request comment now distinguish between
+  no successful baseline run being found and the coverage artifact of the selected run not being downloadable, and the
+  selected baseline run is logged with its ID, commit and age (fgrosse/go-coverage-report#110)
+- Show a caution callout at the top of the pull request comment if the report does not compare against the base commit
+  of the pull request (fgrosse/go-coverage-report#110)
+- Name the baseline commit and run in the details section of the report via the new `-baseline-commit`, `-baseline-run-id` and
+  `-baseline-run-url` flags (fgrosse/go-coverage-report#110)
+- Simplify the details section of the report: rename it to "Coverage details" and drop its headings to avoid mixing many
+  text sizes (fgrosse/go-coverage-report#110)
 
 ## [v1.4.0] - 2026-09-20
 - Also report packages whose coverage changed without any of their files being changed, e.g. when running integration tests with `go test -coverpkg` (fgrosse/go-coverage-report#102)

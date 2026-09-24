@@ -28,6 +28,10 @@ You can use the following environment variables to configure the script:
 - GITHUB_BASELINE_WORKFLOW_REF: The ref path to the workflow to use instead of GITHUB_BASELINE_WORKFLOW (optional)
 - TARGET_BRANCH: The base branch to compare the coverage results against (default: main)
 - EVENT_NAME: The event that triggered the workflow (default: push)
+- REQUESTED_BASELINE_RUN_ID: Use exactly this workflow run as baseline instead of searching for one (e.g. for scripting; optional)
+- REQUESTED_BASELINE_SHA: Use the latest successful baseline workflow run for this full commit SHA (e.g. the base
+  commit of the pull request). If there is none, or if this is empty, the latest successful run on TARGET_BRANCH
+  is used instead (optional)
 - COVERAGE_ARTIFACT_NAME: The name of the artifact containing the code coverage results (default: code-coverage)
 - COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
@@ -49,6 +53,8 @@ GITHUB_RUN_ID=$3
 GITHUB_BASELINE_WORKFLOW=${GITHUB_BASELINE_WORKFLOW:-CI}
 TARGET_BRANCH=${TARGET_BRANCH:-main}
 EVENT_NAME=${EVENT_NAME:-push}
+REQUESTED_BASELINE_RUN_ID=${REQUESTED_BASELINE_RUN_ID:-}
+REQUESTED_BASELINE_SHA=${REQUESTED_BASELINE_SHA:-}
 COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
 COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
 
@@ -101,20 +107,76 @@ mv "/tmp/gh-run-download-$GITHUB_RUN_ID/$COVERAGE_FILE_NAME" $NEW_COVERAGE_PATH
 rm -r "/tmp/gh-run-download-$GITHUB_RUN_ID"
 end_group
 
+# jq program that turns a single workflow run into one tab separated line:
+# <run id> <head sha> <head branch> <created at> <url> <age>
+# The age is computed in jq (and not with GNU date) so this works on all runners.
+# shellcheck disable=SC2016 # $s is a jq variable, not a shell variable
+RUN_DETAILS_JQ='[.databaseId, .headSha, .headBranch, .createdAt, .url,
+  ([now - (.createdAt | sub("\\.[0-9]+Z$"; "Z") | fromdate), 0] | max | floor) as $s
+  | if $s >= 86400 then "\($s / 86400 | floor)d \($s % 86400 / 3600 | floor)h"
+    elif $s >= 3600 then "\($s / 3600 | floor)h \($s % 3600 / 60 | floor)m"
+    else "\($s / 60 | floor)m" end
+  ] | @tsv'
+
+# find_baseline_run prints the details of the latest successful run of the baseline workflow
+# that matches the given additional "gh run list" filters, or nothing if there is none.
+find_baseline_run(){
+  gh run list --status=success --workflow="$GITHUB_BASELINE_WORKFLOW" --event="$EVENT_NAME" \
+    --json=databaseId,headSha,headBranch,createdAt,url --limit=1 -q ".[] | $RUN_DETAILS_JQ" "$@"
+}
+
 start_group "Download code coverage results from target branch"
-LAST_SUCCESSFUL_RUN_ID=$(gh run list --status=success --branch="$TARGET_BRANCH" --workflow="$GITHUB_BASELINE_WORKFLOW" --event="$EVENT_NAME" --json=databaseId --limit=1 -q '.[] | .databaseId')
-BASELINE_AVAILABLE=true
-if [ -z "$LAST_SUCCESSFUL_RUN_ID" ]; then
-  echo "::warning::No successful run found on the target branch"
-  BASELINE_AVAILABLE=false
+# The selected baseline run is described by the following variables:
+# BASELINE_RUN_ID, BASELINE_SHA, BASELINE_BRANCH, BASELINE_CREATED_AT, BASELINE_RUN_URL, BASELINE_AGE
+# and BASELINE_SOURCE ("explicit run id", "base sha" or "latest run fallback").
+RUN_DETAILS=""
+BASELINE_SOURCE=""
+if [ -n "$REQUESTED_BASELINE_RUN_ID" ]; then
+  if ! RUN_DETAILS=$(gh run view "$REQUESTED_BASELINE_RUN_ID" --json=databaseId,headSha,headBranch,createdAt,url -q "$RUN_DETAILS_JQ"); then
+    echo "::error::Could not find the requested baseline run $REQUESTED_BASELINE_RUN_ID"
+    exit 1
+  fi
+  BASELINE_SOURCE="explicit run id"
 else
-  # Try to download the baseline artifact, but don't fail if it's unavailable
-  if gh run download "$LAST_SUCCESSFUL_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID" 2>/dev/null; then
-    mv "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
-    rm -r "/tmp/gh-run-download-$LAST_SUCCESSFUL_RUN_ID"
+  if [ -n "$REQUESTED_BASELINE_SHA" ]; then
+    RUN_DETAILS=$(find_baseline_run --branch="$TARGET_BRANCH" --commit="$REQUESTED_BASELINE_SHA")
+    if [ -n "$RUN_DETAILS" ]; then BASELINE_SOURCE="base sha"; fi
+  fi
+  if [ -z "$RUN_DETAILS" ]; then
+    RUN_DETAILS=$(find_baseline_run --branch="$TARGET_BRANCH")
+    if [ -n "$RUN_DETAILS" ]; then BASELINE_SOURCE="latest run fallback"; fi
+  fi
+fi
+
+BASELINE_RUN_ID="" BASELINE_SHA="" BASELINE_BRANCH="" BASELINE_CREATED_AT="" BASELINE_RUN_URL="" BASELINE_AGE=""
+if [ -n "$RUN_DETAILS" ]; then
+  IFS=$'\t' read -r BASELINE_RUN_ID BASELINE_SHA BASELINE_BRANCH BASELINE_CREATED_AT BASELINE_RUN_URL BASELINE_AGE <<< "$RUN_DETAILS" || true
+fi
+
+BASELINE_AVAILABLE=true
+BASELINE_UNAVAILABLE_REASON=""
+if [ -z "$BASELINE_RUN_ID" ]; then
+  if [ -n "$REQUESTED_BASELINE_SHA" ]; then
+    echo "::warning::No successful run of workflow \"$GITHUB_BASELINE_WORKFLOW\" (event \"$EVENT_NAME\") found on branch \"$TARGET_BRANCH\" (searched for base commit ${REQUESTED_BASELINE_SHA:0:7} first, then for the latest run). Coverage cannot be compared against a baseline."
   else
-    echo "::warning::Baseline coverage artifact not available (may be expired after 90 days)"
+    echo "::warning::No successful run of workflow \"$GITHUB_BASELINE_WORKFLOW\" (event \"$EVENT_NAME\") found on branch \"$TARGET_BRANCH\". Coverage cannot be compared against a baseline."
+  fi
+  BASELINE_AVAILABLE=false
+  BASELINE_UNAVAILABLE_REASON=no-run
+else
+  if [ -n "$REQUESTED_BASELINE_SHA" ] && [ "$BASELINE_SOURCE" = "latest run fallback" ]; then
+    echo "::warning::No successful run of workflow \"$GITHUB_BASELINE_WORKFLOW\" (event \"$EVENT_NAME\") found for base commit ${REQUESTED_BASELINE_SHA:0:7}, so the latest run on \"$TARGET_BRANCH\" is used instead (${BASELINE_SHA:0:7}). Coverage changes may include commits that are not part of this pull request."
+  fi
+  echo "::notice::Using baseline run $BASELINE_RUN_ID (source: $BASELINE_SOURCE) for commit ${BASELINE_SHA:0:7} on \"$BASELINE_BRANCH\", created at $BASELINE_CREATED_AT ($BASELINE_AGE ago): $BASELINE_RUN_URL"
+
+  # Try to download the baseline artifact, but don't fail if it's unavailable
+  if gh run download "$BASELINE_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$BASELINE_RUN_ID"; then
+    mv "/tmp/gh-run-download-$BASELINE_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
+    rm -r "/tmp/gh-run-download-$BASELINE_RUN_ID"
+  else
+    echo "::warning::Could not download artifact \"$COVERAGE_ARTIFACT_NAME\" from baseline run $BASELINE_RUN_ID ($BASELINE_RUN_URL), which was created $BASELINE_AGE ago. The artifact may have expired or the artifact name may be wrong."
     BASELINE_AVAILABLE=false
+    BASELINE_UNAVAILABLE_REASON=no-artifact
   fi
 fi
 end_group
@@ -126,6 +188,17 @@ if [ "$BASELINE_AVAILABLE" = "false" ]; then
   touch "$OLD_COVERAGE_PATH"
 fi
 
+# The baseline commit and run are shown in the details section of the report. Binaries older
+# than the action script (e.g. an explicitly pinned "version" input) do not support these flags
+# yet, so they are only passed if the binary lists them in its usage.
+BASELINE_FLAGS=()
+BINARY_USAGE=$(go-coverage-report -h 2>&1 || true)
+if [[ "$BINARY_USAGE" != *-baseline-commit* ]]; then
+  echo "::notice::The installed go-coverage-report binary does not support the -baseline-* flags, so the report will not name the baseline commit"
+elif [ "$BASELINE_AVAILABLE" = "true" ]; then
+  BASELINE_FLAGS=(-baseline-commit="$BASELINE_SHA" -baseline-run-id="$BASELINE_RUN_ID" -baseline-run-url="$BASELINE_RUN_URL")
+fi
+
 METRICS_OUTPUT=$(mktemp)
 
 go-coverage-report \
@@ -133,6 +206,7 @@ go-coverage-report \
     -trim="$TRIM_PACKAGE" \
     ${EXCLUDE:+-exclude="$EXCLUDE"} \
     -metrics-file="$METRICS_OUTPUT" \
+    "${BASELINE_FLAGS[@]}" \
     "$OLD_COVERAGE_PATH" \
     "$NEW_COVERAGE_PATH" \
     "$CHANGED_FILES_PATH" \
@@ -141,18 +215,31 @@ go-coverage-report \
 cat "$METRICS_OUTPUT" >> "$GITHUB_OUTPUT"
 rm -f "$METRICS_OUTPUT"
 
-if [ "$BASELINE_AVAILABLE" = "false" ]; then
-  # Only prepend warning if there's actual coverage data to show
-  if [ -s $COVERAGE_COMMENT_PATH ]; then
-    mv $COVERAGE_COMMENT_PATH $COVERAGE_COMMENT_PATH.tmp
-    echo "⚠️ **Note:** Baseline coverage from \`$TARGET_BRANCH\` branch is not available (artifact may be expired). Showing current coverage for changed files only." > $COVERAGE_COMMENT_PATH
-    echo "" >> $COVERAGE_COMMENT_PATH
-    cat $COVERAGE_COMMENT_PATH.tmp >> $COVERAGE_COMMENT_PATH
-    rm $COVERAGE_COMMENT_PATH.tmp
-  else
+# If the report does not compare against the base commit of the pull request,
+# explain why in a single line callout at the very top of the report.
+CAUTION=""
+if [ "$BASELINE_UNAVAILABLE_REASON" = "no-run" ]; then
+  CAUTION="No coverage from the \`$GITHUB_BASELINE_WORKFLOW\` workflow was found on \`$TARGET_BRANCH\`, so this report only shows the current coverage of the changed files"
+elif [ "$BASELINE_UNAVAILABLE_REASON" = "no-artifact" ]; then
+  CAUTION="The \`$COVERAGE_ARTIFACT_NAME\` artifact of run [#$BASELINE_RUN_ID]($BASELINE_RUN_URL) for commit ${BASELINE_SHA:0:7} could not be downloaded (it may have expired), so this report only shows the current coverage of the changed files"
+elif [ -n "$REQUESTED_BASELINE_SHA" ] && [ "$BASELINE_SOURCE" = "latest run fallback" ]; then
+  CAUTION="No coverage for base commit ${REQUESTED_BASELINE_SHA:0:7} was found, so this report compares against ${BASELINE_SHA:0:7} (latest run on \`$TARGET_BRANCH\`)"
+fi
+
+if [ ! -s $COVERAGE_COMMENT_PATH ]; then
+  if [ "$BASELINE_AVAILABLE" = "false" ]; then
     # No changed Go files - skip posting a comment since there's nothing to report
     echo "::notice::No changed Go files detected and no baseline available - skipping coverage comment"
   fi
+elif [ -n "$CAUTION" ]; then
+  mv $COVERAGE_COMMENT_PATH $COVERAGE_COMMENT_PATH.tmp
+  {
+    echo "> [!CAUTION]"
+    echo "> $CAUTION"
+    echo ""
+    cat $COVERAGE_COMMENT_PATH.tmp
+  } > $COVERAGE_COMMENT_PATH
+  rm $COVERAGE_COMMENT_PATH.tmp
 fi
 end_group
 

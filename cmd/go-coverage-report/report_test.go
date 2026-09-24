@@ -29,13 +29,9 @@ func TestReport_Markdown(t *testing.T) {
 |-------------------|------------|---------|
 | github.com/fgrosse/prioqueue | 90.20% (**-9.80%**) | :thumbsdown: |
 
----
-
 <details>
 
-<summary>Coverage by file</summary>
-
-### Changed files (no unit tests)
+<summary>Coverage details</summary>
 
 | Changed File | Coverage Δ | Total | Covered | Missed | :robot: |
 |--------------|------------|-------|---------|--------|---------|
@@ -90,14 +86,11 @@ func TestReport_Markdown_OnlyChangedUnitTests(t *testing.T) {
 |-------------------|------------|---------|
 | github.com/fgrosse/prioqueue | 99.02% (**+8.82%**) | :thumbsup: |
 
----
-
 <details>
 
-<summary>Coverage by file</summary>
+<summary>Coverage details</summary>
 
-### Changed unit test files
-
+Changed unit test files:
 - github.com/fgrosse/prioqueue/min_heap_test.go
 
 </details>`
@@ -127,14 +120,11 @@ func TestReport_Markdown_DeletedUnitTestFile(t *testing.T) {
 |-------------------|------------|---------|
 | github.com/fgrosse/prioqueue | 90.20% (**-8.82%**) | :thumbsdown: |
 
----
-
 <details>
 
-<summary>Coverage by file</summary>
+<summary>Coverage details</summary>
 
-### Changed unit test files
-
+Changed unit test files:
 - github.com/fgrosse/prioqueue/min_heap_test.go
 
 </details>`
@@ -164,14 +154,11 @@ func TestReport_Markdown_CoverPkg(t *testing.T) {
 |-------------------|------------|---------|
 | example.com/demo/calc | 83.33% (**+50.00%**) | :star2: |
 
----
-
 <details>
 
-<summary>Coverage by file</summary>
+<summary>Coverage details</summary>
 
-### Changed unit test files
-
+Changed unit test files:
 - example.com/demo/integration/integration_test.go
 
 </details>`
@@ -202,11 +189,9 @@ func TestReport_Markdown_CoverPkgExcluded(t *testing.T) {
 |-------------------|------------|---------|
 | example.com/demo/calc | 83.33% (**+50.00%**) | :star2: |
 
----
-
 <details>
 
-<summary>Coverage by file</summary>
+<summary>Coverage details</summary>
 
 </details>`
 	assert.Equal(t, expected, actual)
@@ -283,4 +268,58 @@ func parseCoverageString(t *testing.T, profile string) *Coverage {
 	require.NoError(t, err)
 
 	return New(profiles)
+}
+
+func TestReport_Markdown_Baseline(t *testing.T) {
+	oldCov, err := ParseCoverage("testdata/02-old-coverage.txt", nil)
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/02-new-coverage.txt", nil)
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/02-changed-files.json", "github.com/fgrosse/prioqueue")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	report.Baseline = &Baseline{
+		Commit: "2eb52af2e3c0c7d6b1d1a8e0f7e4f9d8c1b2a3f4",
+		RunID:  "8221109494",
+		RunURL: "https://github.com/fgrosse/prioqueue/actions/runs/8221109494",
+	}
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **increase** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| github.com/fgrosse/prioqueue | 99.02% (**+8.82%**) | :thumbsup: |
+
+<details>
+
+<summary>Coverage details</summary>
+
+<sub>Compared to commit 2eb52af (run [#8221109494](https://github.com/fgrosse/prioqueue/actions/runs/8221109494))</sub>
+
+Changed unit test files:
+- github.com/fgrosse/prioqueue/min_heap_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}
+
+func TestBaseline_Markdown(t *testing.T) {
+	cases := map[string]struct {
+		baseline Baseline
+		expected string
+	}{
+		"commit only":        {Baseline{Commit: "2eb52af"}, "Compared to commit 2eb52af"},
+		"run without url":    {Baseline{Commit: "2eb52af", RunID: "42"}, "Compared to commit 2eb52af (run #42)"},
+		"full sha shortened": {Baseline{Commit: "2eb52af2e3c0", RunID: "42", RunURL: "https://x/42"}, "Compared to commit 2eb52af (run [#42](https://x/42))"},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.expected, c.baseline.Markdown())
+		})
+	}
 }

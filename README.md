@@ -23,7 +23,7 @@ Example of a pull request comment created by `go-coverage-report`:
 
 ![Example of a pull request comment created by go-coverage-report](screenshot.png)
 
-Please note that by default, the "Coverage by file" section is collapsed so the focus
+Please note that by default, the "Coverage details" section is collapsed so the focus
 is more on the overall impact on the coverage _per package_.
 
 There is no indicator of the _total_ coverage of the project because the impact by
@@ -188,7 +188,45 @@ inputs:
       For other event types (e.g. push, schedule), set this explicitly.
     default: ${{ github.base_ref }}
     required: false
+
+  baseline-run-id:
+    description: |
+      The ID of the GitHub Actions workflow run whose coverage artifact should be used as
+      baseline. If set, this exact run is used and no other lookup happens. This is intended
+      for scripting, e.g. to feed the baseline run ID from another workflow into this action.
+    default: ""
+    required: false
+
+  baseline-sha:
+    description: |
+      The commit whose coverage should be used as baseline. The action uses the latest
+      successful run of the baseline workflow for this commit on the target branch.
+      If there is no such run, it falls back to the latest successful run on the target branch.
+      Must be a full commit SHA. Defaults to the base commit of the pull request.
+      Set to "" to disable matching by commit and always use the latest run on the target branch.
+    default: ${{ github.event.pull_request.base.sha }}
+    required: false
 ```
+
+### Baseline selection
+
+The coverage of the pull request is compared against the coverage artifact of a successful
+run of the baseline workflow (see `github-baseline-workflow-ref` and `event-name`). The run is
+selected as follows:
+
+1. If `baseline-run-id` is set, exactly this run is used.
+2. Otherwise, if `baseline-sha` is set (by default the base commit of the pull request), the
+   latest successful run for this commit on the `target-branch` is used.
+3. If there is no such run, or `baseline-sha` is empty, the latest successful run on the
+   `target-branch` is used. If a `baseline-sha` was given, the action emits a warning because
+   the coverage changes may then include commits that are not part of the pull request.
+
+The selected run (ID, commit, age and URL) is logged, and the "Coverage details" section of the
+pull request comment names the baseline commit and run. If the report does not compare against
+the base commit of the pull request, a caution callout at the top of the comment explains why:
+either the latest run on the `target-branch` was used instead, no successful baseline run was
+found, or the coverage artifact of the selected run could not be downloaded (e.g. because it
+expired). In the latter two cases, the comment only shows the current coverage of the changed files.
 
 ### Outputs
 
@@ -224,12 +262,13 @@ This action provides the following outputs:
 
 - Currently, code coverage profiles are uploaded as GitHub artifacts which automatically expire after 90 days.
   In a repository which receives changes only infrequently, this might lead to issues when trying to compare
-  the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).  
+  the code coverage of a pull request with the code coverage of the main branch (see fgrosse/go-coverage-report#5).
+  In this case, the report only shows the current coverage of the changed files and a note explains why.
 - Support **for forks** is limited since the necessary `GITHUB_TOKEN` permissions don't allow to post comments to the
   pull request of the base repository (see fgrosse/go-coverage-report#15). If forks are important for you, this action
   might not be the best solution.
 - Packages with a name that differs from their directory on disk are not supported yet.
-- The "Coverage by file" section only lists changed files. Packages that are listed only because
+- The "Coverage details" section only lists changed files. Packages that are listed only because
   their coverage changed (e.g. when using `go test -coverpkg`) have no per-file breakdown.
 - Requires `actions/upload-artifact` >= **v4** (see this [issue][upload-artifacts-issues]).
 

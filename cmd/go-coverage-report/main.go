@@ -39,6 +39,7 @@ type options struct {
 	format      string
 	exclude     *regexp.Regexp
 	metricsFile string
+	baseline    Baseline
 }
 
 func main() {
@@ -54,6 +55,9 @@ func main() {
 	flag.String("format", "markdown", "output format (currently only 'markdown' is supported)")
 	flag.String("exclude", "", "exclude files matching the given regular expression from the report")
 	flag.String("metrics-file", "", "write key=value coverage metrics to this file for GitHub Actions outputs")
+	flag.String("baseline-commit", "", "the commit SHA of the old coverage, shown in the markdown report (optional)")
+	flag.String("baseline-run-id", "", "the ID of the workflow run that produced the old coverage, shown in the markdown report (optional)")
+	flag.String("baseline-run-url", "", "the URL of the workflow run that produced the old coverage (optional)")
 
 	err := run(programArgs())
 	if err != nil {
@@ -78,6 +82,11 @@ func programArgs() (oldCov, newCov, changedFile string, opts options) {
 		trim:        flag.Lookup("trim").Value.String(),
 		format:      flag.Lookup("format").Value.String(),
 		metricsFile: flag.Lookup("metrics-file").Value.String(),
+		baseline: Baseline{
+			Commit: flag.Lookup("baseline-commit").Value.String(),
+			RunID:  flag.Lookup("baseline-run-id").Value.String(),
+			RunURL: flag.Lookup("baseline-run-url").Value.String(),
+		},
 	}
 
 	if s := flag.Lookup("exclude").Value.String(); s != "" {
@@ -119,6 +128,9 @@ func run(oldCovPath, newCovPath, changedFilesPath string, opts options) error {
 	changedFiles = excludeFiles(changedFiles, opts.exclude)
 
 	report := NewReport(oldCov, newCov, changedFiles)
+	if opts.baseline.Commit != "" {
+		report.Baseline = &opts.baseline
+	}
 	if opts.trim != "" {
 		report.TrimPrefix(opts.trim)
 	}

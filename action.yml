@@ -75,6 +75,24 @@ inputs:
     default: ${{ github.base_ref }}
     required: false
 
+  baseline-run-id:
+    description: |
+      The ID of the GitHub Actions workflow run whose coverage artifact should be used as
+      baseline. If set, this exact run is used and no other lookup happens. This is intended
+      for scripting, e.g. to feed the baseline run ID from another workflow into this action.
+    default: ""
+    required: false
+
+  baseline-sha:
+    description: |
+      The commit whose coverage should be used as baseline. The action uses the latest
+      successful run of the baseline workflow for this commit on the target branch.
+      If there is no such run, it falls back to the latest successful run on the target branch.
+      Must be a full commit SHA. Defaults to the base commit of the pull request.
+      Set to "" to disable matching by commit and always use the latest run on the target branch.
+    default: ${{ github.event.pull_request.base.sha }}
+    required: false
+
 outputs:
   coverage_report:
     description: 'The generated coverage report in Markdown format.'
@@ -138,3 +156,5 @@ runs:
         TRIM_PACKAGE: ${{ inputs.trim }}
         EXCLUDE: ${{ inputs.exclude }}
         EVENT_NAME: ${{ inputs.event-name }}
+        REQUESTED_BASELINE_RUN_ID: ${{ inputs.baseline-run-id }}
+        REQUESTED_BASELINE_SHA: ${{ inputs.baseline-sha }}

@@ -188,9 +188,14 @@ if [ "$BASELINE_AVAILABLE" = "false" ]; then
   touch "$OLD_COVERAGE_PATH"
 fi
 
-# The baseline commit and run are shown in the details section of the report.
+# The baseline commit and run are shown in the details section of the report. Binaries older
+# than the action script (e.g. an explicitly pinned "version" input) do not support these flags
+# yet, so they are only passed if the binary lists them in its usage.
 BASELINE_FLAGS=()
-if [ "$BASELINE_AVAILABLE" = "true" ]; then
+BINARY_USAGE=$(go-coverage-report -h 2>&1 || true)
+if [[ "$BINARY_USAGE" != *-baseline-commit* ]]; then
+  echo "::notice::The installed go-coverage-report binary does not support the -baseline-* flags, so the report will not name the baseline commit"
+elif [ "$BASELINE_AVAILABLE" = "true" ]; then
   BASELINE_FLAGS=(-baseline-commit="$BASELINE_SHA" -baseline-run-id="$BASELINE_RUN_ID" -baseline-run-url="$BASELINE_RUN_URL")
 fi
 

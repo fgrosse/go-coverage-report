@@ -21,9 +21,8 @@ Markdown table with emojis indicating the coverage change per package.
 
 You can use the -root flag to add a prefix to all paths in the list of changed
 files. This is useful to map the changed files (e.g., ["foo/my_file.go"] to their
-coverage profile which uses the full package name to identify the files
-(e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently,
-packages with a different name than their directory are not supported.
+coverage profile which uses the full import path to identify the files
+(e.g., "github.com/fgrosse/example/foo/my_file.go").
 
 ARGUMENTS:
   OLD_COVERAGE_FILE   The path to the old coverage file in the format produced by go test -coverprofile

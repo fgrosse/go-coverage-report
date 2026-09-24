@@ -29,9 +29,10 @@ inputs:
     description: |
       The Go import path of the tested repository to add as a prefix to all paths of the
       changed files. This is useful to map the changed files (e.g., ["foo/my_file.go"]
-      to their coverage profile which uses the full package name to identify the files
-      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently, 
-      packages with a different name than their directory are not supported.
+      to their coverage profile which uses the full import path to identify the files
+      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Set this explicitly if your
+      module path differs from the repository path, e.g. for major version suffixes
+      ("github.com/owner/repo/v2"), vanity import paths or modules in a subdirectory.
     required: false
     default: "github.com/${{ github.repository }}"
 

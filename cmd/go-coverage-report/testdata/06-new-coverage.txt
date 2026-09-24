@@ -1,0 +1,5 @@
+mode: set
+github.com/owner/project/baz/baz.go:3.24,3.40 1 1
+github.com/owner/project/foo-bar/foo_bar.go:3.24,4.13 1 1
+github.com/owner/project/foo-bar/foo_bar.go:4.13,6.3 1 1
+github.com/owner/project/foo-bar/foo_bar.go:7.2,7.14 1 1

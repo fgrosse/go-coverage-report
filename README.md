@@ -143,9 +143,10 @@ inputs:
     description: |
       The Go import path of the tested repository to add as a prefix to all paths of the
       changed files. This is useful to map the changed files (e.g., ["foo/my_file.go"]
-      to their coverage profile which uses the full package name to identify the files
-      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Note that currently, 
-      packages with a different name than their directory are not supported.
+      to their coverage profile which uses the full import path to identify the files
+      (e.g., "github.com/fgrosse/example/foo/my_file.go"). Set this explicitly if your
+      module path differs from the repository path, e.g. for major version suffixes
+      ("github.com/owner/repo/v2"), vanity import paths or modules in a subdirectory.
     required: false
     default: "github.com/${{ github.repository }}"
 
@@ -228,7 +229,6 @@ This action provides the following outputs:
 - Support **for forks** is limited since the necessary `GITHUB_TOKEN` permissions don't allow to post comments to the
   pull request of the base repository (see fgrosse/go-coverage-report#15). If forks are important for you, this action
   might not be the best solution.
-- Packages with a name that differs from their directory on disk are not supported yet.
 - The "Coverage by file" section only lists changed files. Packages that are listed only because
   their coverage changed (e.g. when using `go test -coverpkg`) have no per-file breakdown.
 - Requires `actions/upload-artifact` >= **v4** (see this [issue][upload-artifacts-issues]).

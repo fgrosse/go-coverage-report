@@ -212,6 +212,56 @@ func TestReport_Markdown_CoverPkgExcluded(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+// TestReport_Markdown_PackageNameDiffersFromDirectory checks that packages
+// whose name differs from their directory are reported correctly. Coverage
+// profiles identify files by import path, so the package name does not matter.
+// The profiles were generated from a module with "package foo" in the
+// directory "foo-bar" and "package qux" in the directory "baz", both tested
+// from an external "_test" package (see fgrosse/go-coverage-report#13).
+func TestReport_Markdown_PackageNameDiffersFromDirectory(t *testing.T) {
+	oldCov, err := ParseCoverage("testdata/06-old-coverage.txt", nil)
+	require.NoError(t, err)
+
+	newCov, err := ParseCoverage("testdata/06-new-coverage.txt", nil)
+	require.NoError(t, err)
+
+	changedFiles, err := ParseChangedFiles("testdata/06-changed-files.json", "github.com/owner/project")
+	require.NoError(t, err)
+
+	report := NewReport(oldCov, newCov, changedFiles)
+	actual := report.Markdown()
+
+	expected := `### Merging this branch will **increase** overall coverage
+
+| Impacted Packages | Coverage Δ | :robot: |
+|-------------------|------------|---------|
+| github.com/owner/project/baz | 100.00% (**+100.00%**) | :star2: |
+| github.com/owner/project/foo-bar | 100.00% (**+33.33%**) | :star2: |
+
+---
+
+<details>
+
+<summary>Coverage by file</summary>
+
+### Changed files (no unit tests)
+
+| Changed File | Coverage Δ | Total | Covered | Missed | :robot: |
+|--------------|------------|-------|---------|--------|---------|
+| github.com/owner/project/baz/baz.go | 100.00% (**+100.00%**) | 1 | 1 (+1) | 0 (-1) | :star2: |
+| github.com/owner/project/foo-bar/foo_bar.go | 100.00% (**+33.33%**) | 3 | 3 (+1) | 0 (-1) | :star2: |
+
+_Please note that the "Total", "Covered", and "Missed" counts above refer to ***code statements*** instead of lines of code. The value in brackets refers to the test coverage of that file in the old version of the code._
+
+### Changed unit test files
+
+- github.com/owner/project/baz/baz_test.go
+- github.com/owner/project/foo-bar/foo_bar_test.go
+
+</details>`
+	assert.Equal(t, expected, actual)
+}
+
 func TestReport_ImpactedPackages(t *testing.T) {
 	cases := map[string]struct {
 		oldProfile   string

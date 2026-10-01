@@ -223,13 +223,9 @@ func TestReport_Markdown_PackageNameDiffersFromDirectory(t *testing.T) {
 | github.com/owner/project/baz | 100.00% (**+100.00%**) | :star2: |
 | github.com/owner/project/foo-bar | 100.00% (**+33.33%**) | :star2: |
 
----
-
 <details>
 
-<summary>Coverage by file</summary>
-
-### Changed files (no unit tests)
+<summary>Coverage details</summary>
 
 | Changed File | Coverage Δ | Total | Covered | Missed | :robot: |
 |--------------|------------|-------|---------|--------|---------|
@@ -238,8 +234,7 @@ func TestReport_Markdown_PackageNameDiffersFromDirectory(t *testing.T) {
 
 _Please note that the "Total", "Covered", and "Missed" counts above refer to ***code statements*** instead of lines of code. The value in brackets refers to the test coverage of that file in the old version of the code._
 
-### Changed unit test files
-
+Changed unit test files:
 - github.com/owner/project/baz/baz_test.go
 - github.com/owner/project/foo-bar/foo_bar_test.go
 

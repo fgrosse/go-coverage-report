@@ -193,6 +193,14 @@ func TestBaselineSelection(t *testing.T) {
 			wantBaselineRun: 101,
 			wantSource:      "latest run fallback",
 		},
+		"latest run is found behind many failed runs": {
+			test: actionTest{
+				Runs: append(failedRuns(20), newRun(101, 1, "success")),
+				Env:  map[string]string{"REQUESTED_BASELINE_SHA": ""},
+			},
+			wantBaselineRun: 101,
+			wantSource:      "latest run fallback",
+		},
 		"listing the ancestors fails": {
 			test: actionTest{
 				Runs:            []workflowRun{newRun(108, 8, "success")},
@@ -311,7 +319,8 @@ func TestBaselineSelection_RunListFails(t *testing.T) {
 	})
 
 	assert.Equal(t, 1, res.ExitCode, res.Log)
-	assert.Contains(t, res.Log, `::error::Could not list the runs of workflow "ci.yml"`)
+	// The annotation must be printed on its own line and not only appear in the xtrace output.
+	assert.Contains(t, res.Log, "\n::error::Could not list the runs of workflow \"ci.yml\"")
 }
 
 func TestBaselineSelection_RunWithoutBranch(t *testing.T) {
@@ -513,6 +522,15 @@ func pullRequestRuns(n int) []workflowRun {
 	runs := make([]workflowRun, n)
 	for i := range runs {
 		runs[i] = newRun(1000+i, 9, "success").on("feature", "pull_request").createdAt(fmt.Sprintf("2026-09-30T11:%02d:%02dZ", i/60, i%60))
+	}
+	return runs
+}
+
+// failedRuns returns n failed runs of pushes to main that are newer than all runs of newRun.
+func failedRuns(n int) []workflowRun {
+	runs := make([]workflowRun, n)
+	for i := range runs {
+		runs[i] = newRun(2000+i, 9, "failure").createdAt(fmt.Sprintf("2026-09-30T12:00:%02dZ", i))
 	}
 	return runs
 }

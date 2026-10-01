@@ -154,7 +154,8 @@ SUCCESSFUL_RUNS_JQ='[.[] | select(.conclusion == "success" and .headBranch == $E
 # match the given additional "gh run list" arguments, newest first. It fails the job if the runs cannot be listed.
 list_baseline_runs(){
   if ! gh run list --workflow="$GITHUB_BASELINE_WORKFLOW" --json="$RUN_FIELDS" -q "$SUCCESSFUL_RUNS_JQ | $RUN_DETAILS_JQ" "$@"; then
-    echo "::error::Could not list the runs of workflow \"$GITHUB_BASELINE_WORKFLOW\" to find the baseline coverage"
+    # Write to stderr, since this function is called in a command substitution that captures stdout.
+    echo "::error::Could not list the runs of workflow \"$GITHUB_BASELINE_WORKFLOW\" to find the baseline coverage" >&2
     exit 1
   fi
 }
@@ -255,7 +256,7 @@ else
     # event are filtered by the API here, because otherwise newer runs of pull requests could hide all runs on the
     # target branch. This run always gets at least one download attempt, because if the artifacts of the base commit
     # and its ancestors expired, the latest run may still have one.
-    RUNS=$(list_baseline_runs --branch="$TARGET_BRANCH" --event="$EVENT_NAME" --limit=20)
+    RUNS=$(list_baseline_runs --branch="$TARGET_BRANCH" --event="$EVENT_NAME" --limit=100)
     MAX_DOWNLOADS=$BASELINE_MAX_DOWNLOADS
     if [ "$DOWNLOAD_ATTEMPTS" -ge "$MAX_DOWNLOADS" ]; then MAX_DOWNLOADS=$((DOWNLOAD_ATTEMPTS + 1)); fi
     if try_baseline_runs "$RUNS" "$MAX_DOWNLOADS"; then BASELINE_SOURCE="latest run fallback"; fi

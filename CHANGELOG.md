@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   expired), the action now uses the nearest commit in the first-parent history of the base commit with a usable run instead
   of the latest run on the target branch. The runs of each commit are filtered client-side, since the filtered workflow runs
   API can return stale results, and further candidates are tried if a coverage artifact cannot be downloaded or does not
-  contain the coverage file (fgrosse/go-coverage-report#109)
+  contain the coverage file (fgrosse/go-coverage-report#113)
 - Add `baseline-search-depth` and `baseline-max-downloads` inputs to configure how far the action searches for a baseline
-  run (fgrosse/go-coverage-report#109)
+  run (fgrosse/go-coverage-report#113)
 - Remove the documented limitation about packages whose name differs from their directory, which was never an actual limitation (fgrosse/go-coverage-report#13)
 - **Behavior change:** By default, the baseline coverage is now taken from the latest successful run for the base commit
   of the pull request (new `baseline-sha` input, defaults to `github.event.pull_request.base.sha`) instead of the latest

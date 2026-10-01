@@ -3,9 +3,12 @@
 # calls that github-action.sh makes and answers them from fixture files in
 # $GH_FAKE_DIR:
 #
-# - commits:     commit SHAs, newest first, as returned by the commits API
-# - runs.json:   workflow runs with the fields of "gh run list --json"
-# - no-artifact: IDs of runs whose coverage artifact cannot be downloaded
+# - commits.json:     commits with their parents, in the order of the commits API
+# - runs.json:        workflow runs with the fields of "gh run list --json"
+# - no-artifact:      IDs of runs whose coverage artifact cannot be downloaded
+# - no-coverage-file: IDs of runs whose artifact does not contain the coverage file
+# - run-list-fails:   if it exists, "gh run list" fails
+# - commits-api-fails: if it exists, listing commits fails
 #
 # Every call is appended to $GH_FAKE_DIR/calls. Unknown calls fail loudly.
 
@@ -13,11 +16,13 @@ set -e -o pipefail
 
 echo "gh $*" >> "$GH_FAKE_DIR/calls"
 
-positional=() jq_filter="" commit="" limit=20 dir=""
+positional=() jq_filter="" commit="" branch="" event="" limit=20 dir=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -q) jq_filter=$2; shift ;;
     --commit=*) commit=${1#*=} ;;
+    --branch=*) branch=${1#*=} ;;
+    --event=*) event=${1#*=} ;;
     --limit=*) limit=${1#*=} ;;
     --dir=*) dir=${1#*=} ;;
     --*) ;;
@@ -38,13 +43,20 @@ case "${positional[0]} ${positional[1]}" in
       exit 1
     fi
     mkdir -p "$dir"
-    echo "coverage of run $id" > "$dir/coverage.txt"
+    if ! grep -qx "$id" "$GH_FAKE_DIR/no-coverage-file"; then
+      echo "coverage of run $id" > "$dir/coverage.txt"
+    fi
     ;;
 
   "run list")
-    # Like the API, apply the limit to the newest runs before the jq filter.
-    jq --arg commit "$commit" --argjson limit "$limit" \
-      '[.[] | select($commit == "" or .headSha == $commit)] | sort_by(.createdAt) | reverse | .[:$limit]' \
+    if [ -e "$GH_FAKE_DIR/run-list-fails" ]; then
+      echo "HTTP 403: API rate limit exceeded" >&2
+      exit 1
+    fi
+    # Like the API, apply the server-side filters and the limit to the newest runs before the jq filter.
+    jq --arg commit "$commit" --arg branch "$branch" --arg event "$event" --argjson limit "$limit" \
+      '[.[] | select(($commit == "" or .headSha == $commit) and ($branch == "" or .headBranch == $branch) and ($event == "" or .event == $event))]
+      | sort_by(.createdAt) | reverse | .[:$limit]' \
       "$GH_FAKE_DIR/runs.json" | jq -r "$jq_filter"
     ;;
 
@@ -65,7 +77,9 @@ case "${positional[0]} ${positional[1]}" in
     query=${positional[1]#*\?}
     sha=$(sed -n 's/.*sha=\([^&]*\).*/\1/p' <<< "$query")
     per_page=$(sed -n 's/.*per_page=\([0-9]*\).*/\1/p' <<< "$query")
-    sed -n "/^$sha/,\$p" "$GH_FAKE_DIR/commits" | head -n "$per_page"
+    # Like the API, list the commits starting at the given SHA.
+    jq --arg sha "$sha" --argjson per_page "$per_page" '(map(.sha) | index($sha)) as $i | .[$i:][:$per_page]' \
+      "$GH_FAKE_DIR/commits.json" | jq -r "$jq_filter"
     ;;
 
   *)

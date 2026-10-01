@@ -33,11 +33,24 @@ type workflowRun struct {
 	URL        string `json:"url"`
 }
 
+// commit is a commit as returned by the commits API.
+type commit struct {
+	SHA     string         `json:"sha"`
+	Parents []commitParent `json:"parents"`
+}
+
+type commitParent struct {
+	SHA string `json:"sha"`
+}
+
 // actionTest describes the GitHub state that the fake gh binary exposes to the script.
 type actionTest struct {
+	Commits         []commit // in the order of the commits API, defaults to linearHistory()
 	Runs            []workflowRun
 	NoArtifact      []int             // IDs of runs whose coverage artifact cannot be downloaded
+	NoCoverageFile  []int             // IDs of runs whose artifact does not contain the coverage file
 	CommitsAPIFails bool              // if set, listing the ancestors of a commit fails
+	RunListFails    bool              // if set, listing workflow runs fails
 	Env             map[string]string // overrides the default environment of the script
 }
 
@@ -99,6 +112,39 @@ func TestBaselineSelection(t *testing.T) {
 			wantCaution:     "compares against its ancestor c700000 (2 commits earlier)",
 			wantDownloads:   2,
 		},
+		"artifact of base run without coverage file": {
+			test: actionTest{
+				Runs: []workflowRun{
+					newRun(108, 8, "success"),
+					newRun(109, 9, "success"),
+				},
+				NoCoverageFile: []int{109},
+			},
+			wantBaselineRun: 108,
+			wantSource:      "ancestor",
+			wantCaution:     "compares against its ancestor c800000 (1 commit earlier)",
+			wantDownloads:   2,
+		},
+		"commits of merged branches are skipped": {
+			test: actionTest{
+				// Commit 9 merges a branch with the commits f3, f2 and f1, which the
+				// commits API lists before commit 8 because they are newer.
+				Commits: append([]commit{
+					newCommit(commitSHA(9), commitSHA(8), sideSHA(3)),
+					newCommit(sideSHA(3), sideSHA(2)),
+					newCommit(sideSHA(2), sideSHA(1)),
+					newCommit(sideSHA(1), commitSHA(7)),
+				}, linearHistory()[1:]...),
+				Runs: []workflowRun{
+					newRun(108, 8, "success"),
+					newRun(109, 9, "failure"),
+				},
+				Env: map[string]string{"BASELINE_SEARCH_DEPTH": "2"},
+			},
+			wantBaselineRun: 108,
+			wantSource:      "ancestor",
+			wantCaution:     "compares against its ancestor c800000 (1 commit earlier)",
+		},
 		"no ancestor has a run": {
 			test: actionTest{
 				Runs: []workflowRun{
@@ -119,6 +165,33 @@ func TestBaselineSelection(t *testing.T) {
 			wantBaselineRun: 107,
 			wantSource:      "latest run fallback",
 			wantCaution:     "(latest run on `main`)",
+		},
+		"artifacts of base and ancestors expired but the latest run has one": {
+			test: actionTest{
+				Runs: []workflowRun{
+					newRun(109, 9, "success"),
+					newRun(105, 5, "success"),
+					newRun(104, 4, "success"),
+					newRun(103, 3, "success"),
+				},
+				NoArtifact: []int{105, 104, 103},
+				Env: map[string]string{
+					"REQUESTED_BASELINE_SHA": commitSHA(5),
+					"BASELINE_MAX_DOWNLOADS": "3",
+				},
+			},
+			wantBaselineRun: 109,
+			wantSource:      "latest run fallback",
+			wantCaution:     "(latest run on `main`)",
+			wantDownloads:   4,
+		},
+		"latest run is found behind many runs of pull requests": {
+			test: actionTest{
+				Runs: append(pullRequestRuns(100), newRun(101, 1, "success")),
+				Env:  map[string]string{"REQUESTED_BASELINE_SHA": ""},
+			},
+			wantBaselineRun: 101,
+			wantSource:      "latest run fallback",
 		},
 		"listing the ancestors fails": {
 			test: actionTest{
@@ -158,8 +231,9 @@ func TestBaselineSelection(t *testing.T) {
 				NoArtifact: []int{109, 108, 107, 106},
 				Env:        map[string]string{"BASELINE_MAX_DOWNLOADS": "3"},
 			},
-			wantCaution:   "The `code-coverage` artifact of run [#109](https://github.com/owner/repo/actions/runs/109) for commit c900000 could not be downloaded",
-			wantDownloads: 3,
+			wantCaution: "The `code-coverage` artifact of run [#109](https://github.com/owner/repo/actions/runs/109) for commit c900000 could not be downloaded",
+			// Three downloads for the ancestors and one for the latest run fallback.
+			wantDownloads: 4,
 		},
 		"explicit run id": {
 			test: actionTest{
@@ -228,6 +302,31 @@ func TestBaselineSelection_UnknownRunID(t *testing.T) {
 
 	assert.Equal(t, 1, res.ExitCode, res.Log)
 	assert.Contains(t, res.Log, "::error::Could not find the requested baseline run 42")
+}
+
+func TestBaselineSelection_RunListFails(t *testing.T) {
+	res := runAction(t, actionTest{
+		Runs:         []workflowRun{newRun(109, 9, "success")},
+		RunListFails: true,
+	})
+
+	assert.Equal(t, 1, res.ExitCode, res.Log)
+	assert.Contains(t, res.Log, `::error::Could not list the runs of workflow "ci.yml"`)
+}
+
+func TestBaselineSelection_RunWithoutBranch(t *testing.T) {
+	run := newRun(105, 5, "success")
+	run.HeadBranch = ""
+	res := runAction(t, actionTest{
+		Runs: []workflowRun{run},
+		Env:  map[string]string{"REQUESTED_BASELINE_RUN_ID": "105"},
+	})
+	require.Equal(t, 0, res.ExitCode, res.Log)
+
+	reportCalls := res.callsWithPrefix("go-coverage-report ")
+	require.Len(t, reportCalls, 1, res.Log)
+	assert.Contains(t, reportCalls[0], "-baseline-commit="+commitSHA(5)+" ", res.Log)
+	assert.Contains(t, reportCalls[0], "-baseline-run-url=https://github.com/owner/repo/actions/runs/105 ", res.Log)
 }
 
 func TestBaselineSelection_InvalidInputs(t *testing.T) {
@@ -334,27 +433,39 @@ func writeFixtures(t *testing.T, at actionTest) string {
 	t.Helper()
 	dir := t.TempDir()
 
-	var commits strings.Builder
-	for n := 9; n >= 0; n-- {
-		commits.WriteString(commitSHA(n) + "\n")
+	commits := at.Commits
+	if commits == nil {
+		commits = linearHistory()
 	}
-	writeFile(t, filepath.Join(dir, "commits"), commits.String())
-
-	runs, err := json.Marshal(append([]workflowRun{}, at.Runs...))
-	require.NoError(t, err)
-	writeFile(t, filepath.Join(dir, "runs.json"), string(runs))
-
-	var noArtifact strings.Builder
-	for _, id := range at.NoArtifact {
-		fmt.Fprintln(&noArtifact, id)
-	}
-	writeFile(t, filepath.Join(dir, "no-artifact"), noArtifact.String())
+	writeJSON(t, filepath.Join(dir, "commits.json"), commits)
+	writeJSON(t, filepath.Join(dir, "runs.json"), append([]workflowRun{}, at.Runs...))
+	writeIDs(t, filepath.Join(dir, "no-artifact"), at.NoArtifact)
+	writeIDs(t, filepath.Join(dir, "no-coverage-file"), at.NoCoverageFile)
 
 	if at.CommitsAPIFails {
 		writeFile(t, filepath.Join(dir, "commits-api-fails"), "")
 	}
+	if at.RunListFails {
+		writeFile(t, filepath.Join(dir, "run-list-fails"), "")
+	}
 
 	return dir
+}
+
+func writeJSON(t *testing.T, path string, v any) {
+	t.Helper()
+	data, err := json.Marshal(v)
+	require.NoError(t, err)
+	writeFile(t, path, string(data))
+}
+
+func writeIDs(t *testing.T, path string, ids []int) {
+	t.Helper()
+	var content strings.Builder
+	for _, id := range ids {
+		fmt.Fprintln(&content, id)
+	}
+	writeFile(t, path, content.String())
 }
 
 func writeFile(t *testing.T, path, content string) {
@@ -395,6 +506,37 @@ func (r workflowRun) on(branch, event string) workflowRun {
 func (r workflowRun) createdAt(t string) workflowRun {
 	r.CreatedAt = t
 	return r
+}
+
+// pullRequestRuns returns n successful runs of pull requests that are newer than all runs of newRun.
+func pullRequestRuns(n int) []workflowRun {
+	runs := make([]workflowRun, n)
+	for i := range runs {
+		runs[i] = newRun(1000+i, 9, "success").on("feature", "pull_request").createdAt(fmt.Sprintf("2026-09-30T11:%02d:%02dZ", i/60, i%60))
+	}
+	return runs
+}
+
+// linearHistory returns the commits 9 to 0, where each commit is the parent of the previous one.
+func linearHistory() []commit {
+	var commits []commit
+	for n := 9; n > 0; n-- {
+		commits = append(commits, newCommit(commitSHA(n), commitSHA(n-1)))
+	}
+	return append(commits, newCommit(commitSHA(0)))
+}
+
+func newCommit(sha string, parents ...string) commit {
+	c := commit{SHA: sha, Parents: []commitParent{}}
+	for _, p := range parents {
+		c.Parents = append(c.Parents, commitParent{SHA: p})
+	}
+	return c
+}
+
+// sideSHA returns the full SHA of the fake commit with the given number on a merged branch.
+func sideSHA(n int) string {
+	return fmt.Sprintf("f%d%039d", n, 0)[:40]
 }
 
 // commitSHA returns the full SHA of the fake commit with the given number.

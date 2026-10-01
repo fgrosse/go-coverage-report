@@ -6,9 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - If the base commit of the pull request has no usable baseline run (e.g. because it failed, is still running or its artifact
-  expired), the action now uses the nearest ancestor of the base commit with a usable run instead of the latest run on the
-  target branch. Runs are now filtered client-side, since the filtered workflow runs API can return stale results, and
-  further candidates are tried if a coverage artifact cannot be downloaded (fgrosse/go-coverage-report#109)
+  expired), the action now uses the nearest commit in the first-parent history of the base commit with a usable run instead
+  of the latest run on the target branch. The runs of each commit are filtered client-side, since the filtered workflow runs
+  API can return stale results, and further candidates are tried if a coverage artifact cannot be downloaded or does not
+  contain the coverage file (fgrosse/go-coverage-report#109)
 - Add `baseline-search-depth` and `baseline-max-downloads` inputs to configure how far the action searches for a baseline
   run (fgrosse/go-coverage-report#109)
 - Remove the documented limitation about packages whose name differs from their directory, which was never an actual limitation (fgrosse/go-coverage-report#13)

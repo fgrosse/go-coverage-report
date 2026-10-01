@@ -97,16 +97,17 @@ inputs:
 
   baseline-search-depth:
     description: |
-      The number of commits, starting at baseline-sha, that are searched for a usable baseline
-      run (at most 100). If none of them has one, the latest successful run on the target
-      branch is used.
+      The number of commits in the first-parent history of baseline-sha (including itself) that
+      are searched for a usable baseline run (at most 100). If none of them has one, the latest
+      successful run on the target branch is used.
     default: "30"
     required: false
 
   baseline-max-downloads:
     description: |
-      Stop searching for a baseline after this many coverage artifacts could not be downloaded,
-      e.g. because they expired or the coverage-artifact-name is wrong.
+      Stop searching the history of baseline-sha after this many coverage artifacts could not be
+      downloaded, e.g. because they expired or the coverage-artifact-name is wrong. The latest
+      run on the target branch is still tried afterwards.
     default: "5"
     required: false
 

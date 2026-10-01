@@ -211,16 +211,17 @@ inputs:
 
   baseline-search-depth:
     description: |
-      The number of commits, starting at baseline-sha, that are searched for a usable baseline
-      run (at most 100). If none of them has one, the latest successful run on the target
-      branch is used.
+      The number of commits in the first-parent history of baseline-sha (including itself) that
+      are searched for a usable baseline run (at most 100). If none of them has one, the latest
+      successful run on the target branch is used.
     default: "30"
     required: false
 
   baseline-max-downloads:
     description: |
-      Stop searching for a baseline after this many coverage artifacts could not be downloaded,
-      e.g. because they expired or the coverage-artifact-name is wrong.
+      Stop searching the history of baseline-sha after this many coverage artifacts could not be
+      downloaded, e.g. because they expired or the coverage-artifact-name is wrong. The latest
+      run on the target branch is still tried afterwards.
     default: "5"
     required: false
 ```
@@ -236,22 +237,24 @@ selected as follows:
    latest successful run for this commit on the `target-branch` is used.
 3. If this commit has no successful run (e.g. because it failed, was cancelled or is still
    running) or its coverage artifact cannot be downloaded, the action walks back through the
-   ancestors of this commit (see `baseline-search-depth`) and uses the nearest one with a
-   usable run.
-   This way, the baseline never includes changes that were made after the base commit.
+   first-parent history of this commit (see `baseline-search-depth`) and uses the nearest
+   commit with a usable run. This way, the baseline never includes changes that were made
+   after the base commit. The commits of merged branches are skipped.
 4. If none of these commits has a usable run, or `baseline-sha` is empty, the latest successful
    run on the `target-branch` is used.
 
 Whenever the action does not use the run of the `baseline-sha` itself (steps 3 and 4), it emits
 a warning, because the coverage changes may then include commits that are not part of the pull
-request.
+request. In steps 2 and 3, the runs of each commit are filtered by branch, event and conclusion
+by the action itself instead of by the GitHub API, since the filtered API has been observed to
+return stale results (see fgrosse/go-coverage-report#109).
 
 The selected run (ID, commit, age and URL) is logged, and the "Coverage details" section of the
 pull request comment names the baseline commit and run. If the report does not compare against
 the base commit of the pull request, a caution callout at the top of the comment explains why:
 either an ancestor or the latest run on the `target-branch` was used instead, no successful
-baseline run was found, or the coverage artifact of the selected run could not be downloaded
-(e.g. because it expired). In the latter two cases, the comment only shows the current coverage
+baseline run was found, or the coverage artifact of the selected run could not be used (e.g.
+because it expired). In the latter two cases, the comment only shows the current coverage
 of the changed files.
 
 ### Outputs

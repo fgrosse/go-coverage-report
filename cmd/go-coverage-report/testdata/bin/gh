@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Fake gh CLI for the tests in integration_test.go. It supports exactly the
+# calls that github-action.sh makes and answers them from fixture files in
+# $GH_FAKE_DIR:
+#
+# - commits:     commit SHAs, newest first, as returned by the commits API
+# - runs.json:   workflow runs with the fields of "gh run list --json"
+# - no-artifact: IDs of runs whose coverage artifact cannot be downloaded
+#
+# Every call is appended to $GH_FAKE_DIR/calls. Unknown calls fail loudly.
+
+set -e -o pipefail
+
+echo "gh $*" >> "$GH_FAKE_DIR/calls"
+
+positional=() jq_filter="" commit="" limit=20 dir=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -q) jq_filter=$2; shift ;;
+    --commit=*) commit=${1#*=} ;;
+    --limit=*) limit=${1#*=} ;;
+    --dir=*) dir=${1#*=} ;;
+    --*) ;;
+    *) positional+=("$1") ;;
+  esac
+  shift
+done
+
+has_run(){
+  jq -e --argjson id "$1" 'any(.[]; .databaseId == $id)' "$GH_FAKE_DIR/runs.json" > /dev/null
+}
+
+case "${positional[0]} ${positional[1]}" in
+  "run download")
+    id=${positional[2]}
+    if [ "$id" != "$GH_FAKE_CURRENT_RUN" ] && { ! has_run "$id" || grep -qx "$id" "$GH_FAKE_DIR/no-artifact"; }; then
+      echo "no valid artifacts found to download" >&2
+      exit 1
+    fi
+    mkdir -p "$dir"
+    echo "coverage of run $id" > "$dir/coverage.txt"
+    ;;
+
+  "run list")
+    # Like the API, apply the limit to the newest runs before the jq filter.
+    jq --arg commit "$commit" --argjson limit "$limit" \
+      '[.[] | select($commit == "" or .headSha == $commit)] | sort_by(.createdAt) | reverse | .[:$limit]' \
+      "$GH_FAKE_DIR/runs.json" | jq -r "$jq_filter"
+    ;;
+
+  "run view")
+    id=${positional[2]}
+    if ! has_run "$id"; then
+      echo "could not find any workflow run with ID $id" >&2
+      exit 1
+    fi
+    jq --argjson id "$id" '.[] | select(.databaseId == $id)' "$GH_FAKE_DIR/runs.json" | jq -r "$jq_filter"
+    ;;
+
+  "api repos/"*"/commits?"*)
+    if [ -e "$GH_FAKE_DIR/commits-api-fails" ]; then
+      echo "HTTP 403: Resource not accessible by integration" >&2
+      exit 1
+    fi
+    query=${positional[1]#*\?}
+    sha=$(sed -n 's/.*sha=\([^&]*\).*/\1/p' <<< "$query")
+    per_page=$(sed -n 's/.*per_page=\([0-9]*\).*/\1/p' <<< "$query")
+    sed -n "/^$sha/,\$p" "$GH_FAKE_DIR/commits" | head -n "$per_page"
+    ;;
+
+  *)
+    echo "fake gh: unexpected call: gh ${positional[*]}" >&2
+    exit 1
+    ;;
+esac

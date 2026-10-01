@@ -69,6 +69,11 @@ linters:
       text: "line-length-limit:"
       path: ".+_test.go$"
 
+    # Allow longer functions in test files as table driven tests are often long.
+    - linters: [ revive ]
+      text: "function-length:"
+      path: ".+_test.go$"
+
     # profile.go is copied from golang.org/x/tools/cover/profile.go and should not be modified.
     - linters: [ revive ]
       path: 'profile\.go$'

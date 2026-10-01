@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Fake go-coverage-report binary for the tests in integration_test.go.
+# Its "report" contains the baseline coverage it received, so the tests can
+# check which run was used as baseline. Every call is appended to $GH_FAKE_DIR/calls.
+
+if [ "$1" = "-h" ]; then
+  echo "Usage of go-coverage-report: -baseline-commit -baseline-run-id -baseline-run-url"
+  exit 0
+fi
+
+echo "go-coverage-report $*" >> "$GH_FAKE_DIR/calls"
+old_coverage=${*: -3:1}
+echo "Baseline: [$(cat "$old_coverage")]"

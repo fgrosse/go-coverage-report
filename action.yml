@@ -87,9 +87,10 @@ inputs:
   baseline-sha:
     description: |
       The commit whose coverage should be used as baseline. The action uses the latest
-      successful run of the baseline workflow for this commit on the target branch.
-      If there is no such run, it falls back to the latest successful run on the target branch.
-      Must be a full commit SHA. Defaults to the base commit of the pull request.
+      successful run of the baseline workflow for this commit on the target branch. If there
+      is no such run, or its coverage artifact cannot be downloaded, the nearest ancestor of
+      this commit with a usable run is used instead. Must be a full commit SHA. Defaults to the
+      base commit of the pull request.
       Set to "" to disable matching by commit and always use the latest run on the target branch.
     default: ${{ github.event.pull_request.base.sha }}
     required: false

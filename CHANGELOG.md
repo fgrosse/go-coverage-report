@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- If the base commit of the pull request has no usable baseline run (e.g. because it failed, is still running or its artifact
+  expired), the action now uses the nearest ancestor of the base commit with a usable run instead of the latest run on the
+  target branch. Runs are now filtered client-side, since the filtered workflow runs API can return stale results, and
+  further candidates are tried if a coverage artifact cannot be downloaded (fgrosse/go-coverage-report#109)
 - Remove the documented limitation about packages whose name differs from their directory, which was never an actual limitation (fgrosse/go-coverage-report#13)
 - **Behavior change:** By default, the baseline coverage is now taken from the latest successful run for the base commit
   of the pull request (new `baseline-sha` input, defaults to `github.event.pull_request.base.sha`) instead of the latest

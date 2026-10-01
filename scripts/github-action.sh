@@ -29,9 +29,11 @@ You can use the following environment variables to configure the script:
 - TARGET_BRANCH: The base branch to compare the coverage results against (default: main)
 - EVENT_NAME: The event that triggered the workflow (default: push)
 - REQUESTED_BASELINE_RUN_ID: Use exactly this workflow run as baseline instead of searching for one (e.g. for scripting; optional)
-- REQUESTED_BASELINE_SHA: Use the latest successful baseline workflow run for this full commit SHA (e.g. the base
-  commit of the pull request). If there is none, or if this is empty, the latest successful run on TARGET_BRANCH
-  is used instead (optional)
+- REQUESTED_BASELINE_SHA: Use the latest successful baseline workflow run for this commit SHA (e.g. the base commit of
+  the pull request). If there is none, the nearest ancestor with a successful run is used. If there is none either, or
+  if this is empty, the latest successful run on TARGET_BRANCH is used instead (optional)
+- BASELINE_SEARCH_DEPTH: The number of commits, starting at REQUESTED_BASELINE_SHA, that are searched for a baseline run (default: 30)
+- BASELINE_MAX_DOWNLOADS: Stop searching for a baseline after this many failed artifact downloads (default: 5)
 - COVERAGE_ARTIFACT_NAME: The name of the artifact containing the code coverage results (default: code-coverage)
 - COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
 - CHANGED_FILES_PATH: The path to the file containing the list of changed files (default: .github/outputs/all_modified_files.json)
@@ -55,6 +57,8 @@ TARGET_BRANCH=${TARGET_BRANCH:-main}
 EVENT_NAME=${EVENT_NAME:-push}
 REQUESTED_BASELINE_RUN_ID=${REQUESTED_BASELINE_RUN_ID:-}
 REQUESTED_BASELINE_SHA=${REQUESTED_BASELINE_SHA:-}
+BASELINE_SEARCH_DEPTH=${BASELINE_SEARCH_DEPTH:-30}
+BASELINE_MAX_DOWNLOADS=${BASELINE_MAX_DOWNLOADS:-5}
 COVERAGE_ARTIFACT_NAME=${COVERAGE_ARTIFACT_NAME:-code-coverage}
 COVERAGE_FILE_NAME=${COVERAGE_FILE_NAME:-coverage.txt}
 
@@ -118,66 +122,119 @@ RUN_DETAILS_JQ='[.databaseId, .headSha, .headBranch, .createdAt, .url,
     else "\($s / 60 | floor)m" end
   ] | @tsv'
 
-# find_baseline_run prints the details of the latest successful run of the baseline workflow
-# that matches the given additional "gh run list" filters, or nothing if there is none.
-find_baseline_run(){
-  gh run list --status=success --workflow="$GITHUB_BASELINE_WORKFLOW" --event="$EVENT_NAME" \
-    --json=databaseId,headSha,headBranch,createdAt,url --limit=1 -q ".[] | $RUN_DETAILS_JQ" "$@"
+# All runs are listed without the server-side --status, --branch and --event filters and are filtered here instead,
+# because the filtered workflow runs API has been observed to return stale results (fgrosse/go-coverage-report#109).
+export TARGET_BRANCH EVENT_NAME
+RUN_FIELDS=databaseId,headSha,headBranch,event,conclusion,createdAt,url
+# shellcheck disable=SC2016 # $ENV is a jq variable, not a shell variable
+SUCCESSFUL_RUNS_JQ='[.[] | select(.conclusion == "success" and .headBranch == $ENV.TARGET_BRANCH and .event == $ENV.EVENT_NAME)]
+  | sort_by(.createdAt) | reverse | .[]'
+
+# list_baseline_runs prints the details of all successful runs of the baseline workflow on the target branch that
+# match the given additional "gh run list" arguments, newest first.
+list_baseline_runs(){
+  gh run list --workflow="$GITHUB_BASELINE_WORKFLOW" --json="$RUN_FIELDS" -q "$SUCCESSFUL_RUNS_JQ | $RUN_DETAILS_JQ" "$@"
+}
+
+# use_baseline_run selects the given run as baseline and downloads its coverage artifact.
+# It returns a non-zero exit code if the artifact could not be downloaded.
+TRIED_RUN_IDS=" "
+DOWNLOAD_ATTEMPTS=0
+FAILED_RUN_DETAILS=""
+use_baseline_run(){
+  IFS=$'\t' read -r BASELINE_RUN_ID BASELINE_SHA BASELINE_BRANCH BASELINE_CREATED_AT BASELINE_RUN_URL BASELINE_AGE <<< "$1" || true
+  TRIED_RUN_IDS+="$BASELINE_RUN_ID "
+  DOWNLOAD_ATTEMPTS=$((DOWNLOAD_ATTEMPTS + 1))
+  if gh run download "$BASELINE_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$BASELINE_RUN_ID"; then
+    mv "/tmp/gh-run-download-$BASELINE_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
+    rm -r "/tmp/gh-run-download-$BASELINE_RUN_ID"
+    return 0
+  fi
+
+  echo "::warning::Could not download artifact \"$COVERAGE_ARTIFACT_NAME\" from baseline run $BASELINE_RUN_ID ($BASELINE_RUN_URL) for commit ${BASELINE_SHA:0:7}, which was created $BASELINE_AGE ago. The artifact may have expired or the artifact name may be wrong."
+  if [ -z "$FAILED_RUN_DETAILS" ]; then FAILED_RUN_DETAILS=$1; fi
+  return 1
+}
+
+# try_baseline_runs reads run details from stdin and uses the first run whose coverage artifact can be downloaded.
+# Runs that were tried before are skipped. It returns a non-zero exit code if no run could be used.
+try_baseline_runs(){
+  local run_details run_id
+  while IFS= read -r run_details; do
+    [ -n "$run_details" ] || continue
+    run_id=${run_details%%$'\t'*}
+    [[ "$TRIED_RUN_IDS" != *" $run_id "* ]] || continue
+    if [ "$DOWNLOAD_ATTEMPTS" -ge "$BASELINE_MAX_DOWNLOADS" ]; then
+      echo "Giving up after $DOWNLOAD_ATTEMPTS failed artifact downloads"
+      return 1
+    fi
+    if use_baseline_run "$run_details" < /dev/null; then return 0; fi
+  done
+  return 1
 }
 
 start_group "Download code coverage results from target branch"
 # The selected baseline run is described by the following variables:
 # BASELINE_RUN_ID, BASELINE_SHA, BASELINE_BRANCH, BASELINE_CREATED_AT, BASELINE_RUN_URL, BASELINE_AGE
-# and BASELINE_SOURCE ("explicit run id", "base sha" or "latest run fallback").
-RUN_DETAILS=""
+# and BASELINE_SOURCE ("explicit run id", "base sha", "ancestor" or "latest run fallback").
+# For an ancestor, BASELINE_DISTANCE is the number of commits between it and the requested base commit.
 BASELINE_SOURCE=""
+BASELINE_DISTANCE=0
+BASELINE_RUN_ID="" BASELINE_SHA="" BASELINE_BRANCH="" BASELINE_CREATED_AT="" BASELINE_RUN_URL="" BASELINE_AGE=""
 if [ -n "$REQUESTED_BASELINE_RUN_ID" ]; then
   if ! RUN_DETAILS=$(gh run view "$REQUESTED_BASELINE_RUN_ID" --json=databaseId,headSha,headBranch,createdAt,url -q "$RUN_DETAILS_JQ"); then
     echo "::error::Could not find the requested baseline run $REQUESTED_BASELINE_RUN_ID"
     exit 1
   fi
-  BASELINE_SOURCE="explicit run id"
+  if use_baseline_run "$RUN_DETAILS"; then BASELINE_SOURCE="explicit run id"; fi
 else
   if [ -n "$REQUESTED_BASELINE_SHA" ]; then
-    RUN_DETAILS=$(find_baseline_run --branch="$TARGET_BRANCH" --commit="$REQUESTED_BASELINE_SHA")
-    if [ -n "$RUN_DETAILS" ]; then BASELINE_SOURCE="base sha"; fi
+    # Search the base commit and its ancestors, nearest first, for a successful run with a coverage artifact.
+    # This way the baseline never contains changes that were made after the base commit.
+    if ! ANCESTORS=$(gh api "repos/$GITHUB_REPOSITORY/commits?sha=$REQUESTED_BASELINE_SHA&per_page=$BASELINE_SEARCH_DEPTH" -q '.[].sha'); then
+      echo "::warning::Could not list the ancestors of base commit ${REQUESTED_BASELINE_SHA:0:7}, so only the base commit itself is searched for a baseline run"
+      ANCESTORS=$REQUESTED_BASELINE_SHA
+    fi
+    DISTANCE=0
+    for SHA in $ANCESTORS; do
+      if try_baseline_runs < <(list_baseline_runs --commit="$SHA" --limit=20); then
+        BASELINE_DISTANCE=$DISTANCE
+        if [ "$DISTANCE" -eq 0 ]; then BASELINE_SOURCE="base sha"; else BASELINE_SOURCE="ancestor"; fi
+        break
+      fi
+      if [ "$DOWNLOAD_ATTEMPTS" -ge "$BASELINE_MAX_DOWNLOADS" ]; then break; fi
+      DISTANCE=$((DISTANCE + 1))
+    done
   fi
-  if [ -z "$RUN_DETAILS" ]; then
-    RUN_DETAILS=$(find_baseline_run --branch="$TARGET_BRANCH")
-    if [ -n "$RUN_DETAILS" ]; then BASELINE_SOURCE="latest run fallback"; fi
+  if [ -z "$BASELINE_SOURCE" ] && [ "$DOWNLOAD_ATTEMPTS" -lt "$BASELINE_MAX_DOWNLOADS" ]; then
+    if try_baseline_runs < <(list_baseline_runs --limit=100); then BASELINE_SOURCE="latest run fallback"; fi
   fi
-fi
-
-BASELINE_RUN_ID="" BASELINE_SHA="" BASELINE_BRANCH="" BASELINE_CREATED_AT="" BASELINE_RUN_URL="" BASELINE_AGE=""
-if [ -n "$RUN_DETAILS" ]; then
-  IFS=$'\t' read -r BASELINE_RUN_ID BASELINE_SHA BASELINE_BRANCH BASELINE_CREATED_AT BASELINE_RUN_URL BASELINE_AGE <<< "$RUN_DETAILS" || true
 fi
 
 BASELINE_AVAILABLE=true
 BASELINE_UNAVAILABLE_REASON=""
-if [ -z "$BASELINE_RUN_ID" ]; then
+if [ -n "$BASELINE_SOURCE" ]; then
+  if [ "$BASELINE_SOURCE" = "ancestor" ]; then
+    BASELINE_DISTANCE_TEXT="$BASELINE_DISTANCE commits"
+    if [ "$BASELINE_DISTANCE" -eq 1 ]; then BASELINE_DISTANCE_TEXT="1 commit"; fi
+    echo "::warning::No usable coverage was found for base commit ${REQUESTED_BASELINE_SHA:0:7}, so the coverage of its ancestor ${BASELINE_SHA:0:7} ($BASELINE_DISTANCE_TEXT earlier) is used instead. Coverage changes may include commits that are not part of this pull request."
+  elif [ -n "$REQUESTED_BASELINE_SHA" ] && [ "$BASELINE_SOURCE" = "latest run fallback" ]; then
+    echo "::warning::No usable coverage was found for base commit ${REQUESTED_BASELINE_SHA:0:7} or its ancestors, so the latest run on \"$TARGET_BRANCH\" is used instead (${BASELINE_SHA:0:7}). Coverage changes may include commits that are not part of this pull request."
+  fi
+  echo "::notice::Using baseline run $BASELINE_RUN_ID (source: $BASELINE_SOURCE) for commit ${BASELINE_SHA:0:7} on \"$BASELINE_BRANCH\", created at $BASELINE_CREATED_AT ($BASELINE_AGE ago): $BASELINE_RUN_URL"
+elif [ -n "$FAILED_RUN_DETAILS" ]; then
+  # Describe the first run whose artifact could not be downloaded in the report.
+  IFS=$'\t' read -r BASELINE_RUN_ID BASELINE_SHA BASELINE_BRANCH BASELINE_CREATED_AT BASELINE_RUN_URL BASELINE_AGE <<< "$FAILED_RUN_DETAILS" || true
+  BASELINE_AVAILABLE=false
+  BASELINE_UNAVAILABLE_REASON=no-artifact
+else
   if [ -n "$REQUESTED_BASELINE_SHA" ]; then
-    echo "::warning::No successful run of workflow \"$GITHUB_BASELINE_WORKFLOW\" (event \"$EVENT_NAME\") found on branch \"$TARGET_BRANCH\" (searched for base commit ${REQUESTED_BASELINE_SHA:0:7} first, then for the latest run). Coverage cannot be compared against a baseline."
+    echo "::warning::No successful run of workflow \"$GITHUB_BASELINE_WORKFLOW\" (event \"$EVENT_NAME\") found on branch \"$TARGET_BRANCH\" (searched for base commit ${REQUESTED_BASELINE_SHA:0:7} and its ancestors first, then for the latest run). Coverage cannot be compared against a baseline."
   else
     echo "::warning::No successful run of workflow \"$GITHUB_BASELINE_WORKFLOW\" (event \"$EVENT_NAME\") found on branch \"$TARGET_BRANCH\". Coverage cannot be compared against a baseline."
   fi
   BASELINE_AVAILABLE=false
   BASELINE_UNAVAILABLE_REASON=no-run
-else
-  if [ -n "$REQUESTED_BASELINE_SHA" ] && [ "$BASELINE_SOURCE" = "latest run fallback" ]; then
-    echo "::warning::No successful run of workflow \"$GITHUB_BASELINE_WORKFLOW\" (event \"$EVENT_NAME\") found for base commit ${REQUESTED_BASELINE_SHA:0:7}, so the latest run on \"$TARGET_BRANCH\" is used instead (${BASELINE_SHA:0:7}). Coverage changes may include commits that are not part of this pull request."
-  fi
-  echo "::notice::Using baseline run $BASELINE_RUN_ID (source: $BASELINE_SOURCE) for commit ${BASELINE_SHA:0:7} on \"$BASELINE_BRANCH\", created at $BASELINE_CREATED_AT ($BASELINE_AGE ago): $BASELINE_RUN_URL"
-
-  # Try to download the baseline artifact, but don't fail if it's unavailable
-  if gh run download "$BASELINE_RUN_ID" --name="$COVERAGE_ARTIFACT_NAME" --dir="/tmp/gh-run-download-$BASELINE_RUN_ID"; then
-    mv "/tmp/gh-run-download-$BASELINE_RUN_ID/$COVERAGE_FILE_NAME" $OLD_COVERAGE_PATH
-    rm -r "/tmp/gh-run-download-$BASELINE_RUN_ID"
-  else
-    echo "::warning::Could not download artifact \"$COVERAGE_ARTIFACT_NAME\" from baseline run $BASELINE_RUN_ID ($BASELINE_RUN_URL), which was created $BASELINE_AGE ago. The artifact may have expired or the artifact name may be wrong."
-    BASELINE_AVAILABLE=false
-    BASELINE_UNAVAILABLE_REASON=no-artifact
-  fi
 fi
 end_group
 
@@ -222,6 +279,8 @@ if [ "$BASELINE_UNAVAILABLE_REASON" = "no-run" ]; then
   CAUTION="No coverage from the \`$GITHUB_BASELINE_WORKFLOW\` workflow was found on \`$TARGET_BRANCH\`, so this report only shows the current coverage of the changed files"
 elif [ "$BASELINE_UNAVAILABLE_REASON" = "no-artifact" ]; then
   CAUTION="The \`$COVERAGE_ARTIFACT_NAME\` artifact of run [#$BASELINE_RUN_ID]($BASELINE_RUN_URL) for commit ${BASELINE_SHA:0:7} could not be downloaded (it may have expired), so this report only shows the current coverage of the changed files"
+elif [ "$BASELINE_SOURCE" = "ancestor" ]; then
+  CAUTION="No coverage for base commit ${REQUESTED_BASELINE_SHA:0:7} was found, so this report compares against its ancestor ${BASELINE_SHA:0:7} ($BASELINE_DISTANCE_TEXT earlier)"
 elif [ -n "$REQUESTED_BASELINE_SHA" ] && [ "$BASELINE_SOURCE" = "latest run fallback" ]; then
   CAUTION="No coverage for base commit ${REQUESTED_BASELINE_SHA:0:7} was found, so this report compares against ${BASELINE_SHA:0:7} (latest run on \`$TARGET_BRANCH\`)"
 fi

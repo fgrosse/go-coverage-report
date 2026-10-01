@@ -201,9 +201,10 @@ inputs:
   baseline-sha:
     description: |
       The commit whose coverage should be used as baseline. The action uses the latest
-      successful run of the baseline workflow for this commit on the target branch.
-      If there is no such run, it falls back to the latest successful run on the target branch.
-      Must be a full commit SHA. Defaults to the base commit of the pull request.
+      successful run of the baseline workflow for this commit on the target branch. If there
+      is no such run, or its coverage artifact cannot be downloaded, the nearest ancestor of
+      this commit with a usable run is used instead. Must be a full commit SHA. Defaults to the
+      base commit of the pull request.
       Set to "" to disable matching by commit and always use the latest run on the target branch.
     default: ${{ github.event.pull_request.base.sha }}
     required: false
@@ -218,16 +219,24 @@ selected as follows:
 1. If `baseline-run-id` is set, exactly this run is used.
 2. Otherwise, if `baseline-sha` is set (by default the base commit of the pull request), the
    latest successful run for this commit on the `target-branch` is used.
-3. If there is no such run, or `baseline-sha` is empty, the latest successful run on the
-   `target-branch` is used. If a `baseline-sha` was given, the action emits a warning because
-   the coverage changes may then include commits that are not part of the pull request.
+3. If this commit has no successful run (e.g. because it failed, was cancelled or is still
+   running) or its coverage artifact cannot be downloaded, the action walks back through the
+   ancestors of this commit (up to 30 commits) and uses the nearest one with a usable run.
+   This way, the baseline never includes changes that were made after the base commit.
+4. If none of these commits has a usable run, or `baseline-sha` is empty, the latest successful
+   run on the `target-branch` is used.
+
+Whenever the action does not use the run of the `baseline-sha` itself (steps 3 and 4), it emits
+a warning, because the coverage changes may then include commits that are not part of the pull
+request.
 
 The selected run (ID, commit, age and URL) is logged, and the "Coverage details" section of the
 pull request comment names the baseline commit and run. If the report does not compare against
 the base commit of the pull request, a caution callout at the top of the comment explains why:
-either the latest run on the `target-branch` was used instead, no successful baseline run was
-found, or the coverage artifact of the selected run could not be downloaded (e.g. because it
-expired). In the latter two cases, the comment only shows the current coverage of the changed files.
+either an ancestor or the latest run on the `target-branch` was used instead, no successful
+baseline run was found, or the coverage artifact of the selected run could not be downloaded
+(e.g. because it expired). In the latter two cases, the comment only shows the current coverage
+of the changed files.
 
 ### Outputs
 

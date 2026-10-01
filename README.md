@@ -208,6 +208,21 @@ inputs:
       Set to "" to disable matching by commit and always use the latest run on the target branch.
     default: ${{ github.event.pull_request.base.sha }}
     required: false
+
+  baseline-search-depth:
+    description: |
+      The number of commits, starting at baseline-sha, that are searched for a usable baseline
+      run (at most 100). If none of them has one, the latest successful run on the target
+      branch is used.
+    default: "30"
+    required: false
+
+  baseline-max-downloads:
+    description: |
+      Stop searching for a baseline after this many coverage artifacts could not be downloaded,
+      e.g. because they expired or the coverage-artifact-name is wrong.
+    default: "5"
+    required: false
 ```
 
 ### Baseline selection
@@ -221,7 +236,8 @@ selected as follows:
    latest successful run for this commit on the `target-branch` is used.
 3. If this commit has no successful run (e.g. because it failed, was cancelled or is still
    running) or its coverage artifact cannot be downloaded, the action walks back through the
-   ancestors of this commit (up to 30 commits) and uses the nearest one with a usable run.
+   ancestors of this commit (see `baseline-search-depth`) and uses the nearest one with a
+   usable run.
    This way, the baseline never includes changes that were made after the base commit.
 4. If none of these commits has a usable run, or `baseline-sha` is empty, the latest successful
    run on the `target-branch` is used.

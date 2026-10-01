@@ -95,6 +95,21 @@ inputs:
     default: ${{ github.event.pull_request.base.sha }}
     required: false
 
+  baseline-search-depth:
+    description: |
+      The number of commits, starting at baseline-sha, that are searched for a usable baseline
+      run (at most 100). If none of them has one, the latest successful run on the target
+      branch is used.
+    default: "30"
+    required: false
+
+  baseline-max-downloads:
+    description: |
+      Stop searching for a baseline after this many coverage artifacts could not be downloaded,
+      e.g. because they expired or the coverage-artifact-name is wrong.
+    default: "5"
+    required: false
+
 outputs:
   coverage_report:
     description: 'The generated coverage report in Markdown format.'
@@ -160,3 +175,5 @@ runs:
         EVENT_NAME: ${{ inputs.event-name }}
         REQUESTED_BASELINE_RUN_ID: ${{ inputs.baseline-run-id }}
         REQUESTED_BASELINE_SHA: ${{ inputs.baseline-sha }}
+        BASELINE_SEARCH_DEPTH: ${{ inputs.baseline-search-depth }}
+        BASELINE_MAX_DOWNLOADS: ${{ inputs.baseline-max-downloads }}

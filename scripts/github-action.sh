@@ -32,7 +32,7 @@ You can use the following environment variables to configure the script:
 - REQUESTED_BASELINE_SHA: Use the latest successful baseline workflow run for this commit SHA (e.g. the base commit of
   the pull request). If there is none, the nearest ancestor with a successful run is used. If there is none either, or
   if this is empty, the latest successful run on TARGET_BRANCH is used instead (optional)
-- BASELINE_SEARCH_DEPTH: The number of commits, starting at REQUESTED_BASELINE_SHA, that are searched for a baseline run (default: 30)
+- BASELINE_SEARCH_DEPTH: The number of commits, starting at REQUESTED_BASELINE_SHA, that are searched for a baseline run (1-100, default: 30)
 - BASELINE_MAX_DOWNLOADS: Stop searching for a baseline after this many failed artifact downloads (default: 5)
 - COVERAGE_ARTIFACT_NAME: The name of the artifact containing the code coverage results (default: code-coverage)
 - COVERAGE_FILE_NAME: The name of the file containing the code coverage results (default: coverage.txt)
@@ -80,6 +80,16 @@ fi
 
 if [[ -z ${GITHUB_RUN_ID+x} ]]; then
     echo "Missing github_run_id argument"
+    exit 1
+fi
+
+if ! [[ "$BASELINE_SEARCH_DEPTH" =~ ^[0-9]+$ ]] || [ "$BASELINE_SEARCH_DEPTH" -lt 1 ] || [ "$BASELINE_SEARCH_DEPTH" -gt 100 ]; then
+    echo "::error::BASELINE_SEARCH_DEPTH must be a number between 1 and 100, got \"$BASELINE_SEARCH_DEPTH\""
+    exit 1
+fi
+
+if ! [[ "$BASELINE_MAX_DOWNLOADS" =~ ^[0-9]+$ ]] || [ "$BASELINE_MAX_DOWNLOADS" -lt 1 ]; then
+    echo "::error::BASELINE_MAX_DOWNLOADS must be a positive number, got \"$BASELINE_MAX_DOWNLOADS\""
     exit 1
 fi
 

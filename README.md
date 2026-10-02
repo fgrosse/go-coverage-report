@@ -201,11 +201,29 @@ inputs:
   baseline-sha:
     description: |
       The commit whose coverage should be used as baseline. The action uses the latest
-      successful run of the baseline workflow for this commit on the target branch.
-      If there is no such run, it falls back to the latest successful run on the target branch.
-      Must be a full commit SHA. Defaults to the base commit of the pull request.
+      successful run of the baseline workflow for this commit on the target branch. If there
+      is no such run, or its coverage artifact cannot be downloaded, the nearest ancestor of
+      this commit with a usable run is used instead. Must be a full commit SHA. Defaults to the
+      base commit of the pull request.
       Set to "" to disable matching by commit and always use the latest run on the target branch.
     default: ${{ github.event.pull_request.base.sha }}
+    required: false
+
+  baseline-search-depth:
+    description: |
+      The number of commits in the first-parent history of baseline-sha (including itself) that
+      are searched for a usable baseline run (at most 100). If none of them has one, the latest
+      successful run on the target branch is used. The history is read from a single page of
+      100 commits, so if it contains merged branches, fewer commits may be searched.
+    default: "30"
+    required: false
+
+  baseline-max-downloads:
+    description: |
+      Stop searching the history of baseline-sha after this many coverage artifacts could not be
+      downloaded, e.g. because they expired or the coverage-artifact-name is wrong. The latest
+      run on the target branch is still tried afterwards.
+    default: "5"
     required: false
 ```
 
@@ -218,16 +236,27 @@ selected as follows:
 1. If `baseline-run-id` is set, exactly this run is used.
 2. Otherwise, if `baseline-sha` is set (by default the base commit of the pull request), the
    latest successful run for this commit on the `target-branch` is used.
-3. If there is no such run, or `baseline-sha` is empty, the latest successful run on the
-   `target-branch` is used. If a `baseline-sha` was given, the action emits a warning because
-   the coverage changes may then include commits that are not part of the pull request.
+3. If this commit has no successful run (e.g. because it failed, was cancelled or is still
+   running) or its coverage artifact cannot be downloaded, the action walks back through the
+   first-parent history of this commit (see `baseline-search-depth`) and uses the nearest
+   commit with a usable run. This way, the baseline never includes changes that were made
+   after the base commit. The commits of merged branches are skipped.
+4. If none of these commits has a usable run, or `baseline-sha` is empty, the latest successful
+   run on the `target-branch` is used.
+
+Whenever the action does not use the run of the `baseline-sha` itself (steps 3 and 4), it emits
+a warning, because the coverage changes may then include commits that are not part of the pull
+request. In steps 2 and 3, the runs of each commit are filtered by branch, event and conclusion
+by the action itself instead of by the GitHub API, since the filtered API has been observed to
+return stale results (see fgrosse/go-coverage-report#109).
 
 The selected run (ID, commit, age and URL) is logged, and the "Coverage details" section of the
 pull request comment names the baseline commit and run. If the report does not compare against
 the base commit of the pull request, a caution callout at the top of the comment explains why:
-either the latest run on the `target-branch` was used instead, no successful baseline run was
-found, or the coverage artifact of the selected run could not be downloaded (e.g. because it
-expired). In the latter two cases, the comment only shows the current coverage of the changed files.
+either an ancestor or the latest run on the `target-branch` was used instead, no successful
+baseline run was found, or the coverage artifact of the selected run could not be used (e.g.
+because it expired). In the latter two cases, the comment only shows the current coverage
+of the changed files.
 
 ### Outputs
 

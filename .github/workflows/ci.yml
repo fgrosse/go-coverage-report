@@ -16,11 +16,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # Installs the Go version pinned in mise.toml.
+      # Installs the Go and jq versions pinned in mise.toml. jq is used by the fake gh
+      # binary in the integration tests of github-action.sh.
       - name: Set up tools
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
-          install_args: "go"
+          install_args: "go jq"
 
       - name: Restore Go modules cache
         uses: actions/cache@v6

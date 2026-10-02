@@ -213,7 +213,8 @@ inputs:
     description: |
       The number of commits in the first-parent history of baseline-sha (including itself) that
       are searched for a usable baseline run (at most 100). If none of them has one, the latest
-      successful run on the target branch is used.
+      successful run on the target branch is used. The history is read from a single page of
+      100 commits, so if it contains merged branches, fewer commits may be searched.
     default: "30"
     required: false
 

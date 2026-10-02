@@ -79,6 +79,15 @@ func TestBaselineSelection(t *testing.T) {
 			wantSource:      "base sha",
 			wantDownloads:   1,
 		},
+		"push run of the base commit is found behind many scheduled runs": {
+			test: actionTest{Runs: append(
+				newerRuns(25, newRun(3000, 9, "success").on("main", "schedule")),
+				newRun(109, 9, "success"),
+				newRun(108, 8, "success"),
+			)},
+			wantBaselineRun: 109,
+			wantSource:      "base sha",
+		},
 		"newest successful run of the base commit": {
 			test: actionTest{Runs: []workflowRun{
 				newRun(109, 9, "success"),
@@ -185,9 +194,21 @@ func TestBaselineSelection(t *testing.T) {
 			wantCaution:     "(latest run on `main`)",
 			wantDownloads:   4,
 		},
+		"only the latest run is tried as last resort": {
+			test: actionTest{
+				Runs: []workflowRun{
+					newRun(109, 9, "success"),
+					newRun(108, 8, "success"),
+				},
+				NoArtifact: []int{109},
+				Env:        map[string]string{"REQUESTED_BASELINE_SHA": commitSHA(5)},
+			},
+			wantCaution:   "The `code-coverage` artifact of run [#109](https://github.com/owner/repo/actions/runs/109) for commit c900000 could not be downloaded",
+			wantDownloads: 1,
+		},
 		"latest run is found behind many runs of pull requests": {
 			test: actionTest{
-				Runs: append(pullRequestRuns(100), newRun(101, 1, "success")),
+				Runs: append(newerRuns(100, newRun(1000, 9, "success").on("feature", "pull_request")), newRun(101, 1, "success")),
 				Env:  map[string]string{"REQUESTED_BASELINE_SHA": ""},
 			},
 			wantBaselineRun: 101,
@@ -195,7 +216,7 @@ func TestBaselineSelection(t *testing.T) {
 		},
 		"latest run is found behind many failed runs": {
 			test: actionTest{
-				Runs: append(failedRuns(20), newRun(101, 1, "success")),
+				Runs: append(newerRuns(20, newRun(2000, 9, "failure")), newRun(101, 1, "success")),
 				Env:  map[string]string{"REQUESTED_BASELINE_SHA": ""},
 			},
 			wantBaselineRun: 101,
@@ -240,8 +261,8 @@ func TestBaselineSelection(t *testing.T) {
 				Env:        map[string]string{"BASELINE_MAX_DOWNLOADS": "3"},
 			},
 			wantCaution: "The `code-coverage` artifact of run [#109](https://github.com/owner/repo/actions/runs/109) for commit c900000 could not be downloaded",
-			// Three downloads for the ancestors and one for the latest run fallback.
-			wantDownloads: 4,
+			// The latest run 109 was already tried, so the fallback does not download again.
+			wantDownloads: 3,
 		},
 		"explicit run id": {
 			test: actionTest{
@@ -507,6 +528,18 @@ func newRun(id, commit int, conclusion string) workflowRun {
 	}
 }
 
+// newerRuns returns n copies of the given run with consecutive IDs, which are newer than all runs of newRun.
+func newerRuns(n int, run workflowRun) []workflowRun {
+	runs := make([]workflowRun, n)
+	for i := range runs {
+		runs[i] = run
+		runs[i].DatabaseID = run.DatabaseID + i
+		runs[i].URL = fmt.Sprintf("https://github.com/owner/repo/actions/runs/%d", runs[i].DatabaseID)
+		runs[i].CreatedAt = fmt.Sprintf("2026-09-30T12:%02d:%02dZ", i/60, i%60)
+	}
+	return runs
+}
+
 func (r workflowRun) on(branch, event string) workflowRun {
 	r.HeadBranch, r.Event = branch, event
 	return r
@@ -515,24 +548,6 @@ func (r workflowRun) on(branch, event string) workflowRun {
 func (r workflowRun) createdAt(t string) workflowRun {
 	r.CreatedAt = t
 	return r
-}
-
-// pullRequestRuns returns n successful runs of pull requests that are newer than all runs of newRun.
-func pullRequestRuns(n int) []workflowRun {
-	runs := make([]workflowRun, n)
-	for i := range runs {
-		runs[i] = newRun(1000+i, 9, "success").on("feature", "pull_request").createdAt(fmt.Sprintf("2026-09-30T11:%02d:%02dZ", i/60, i%60))
-	}
-	return runs
-}
-
-// failedRuns returns n failed runs of pushes to main that are newer than all runs of newRun.
-func failedRuns(n int) []workflowRun {
-	runs := make([]workflowRun, n)
-	for i := range runs {
-		runs[i] = newRun(2000+i, 9, "failure").createdAt(fmt.Sprintf("2026-09-30T12:00:%02dZ", i))
-	}
-	return runs
 }
 
 // linearHistory returns the commits 9 to 0, where each commit is the parent of the previous one.

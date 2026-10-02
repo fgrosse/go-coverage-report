@@ -241,7 +241,7 @@ else
     fi
     DISTANCE=0
     for SHA in $ANCESTORS; do
-      RUNS=$(list_baseline_runs --commit="$SHA" --limit=20)
+      RUNS=$(list_baseline_runs --commit="$SHA" --limit=100)
       if try_baseline_runs "$RUNS" "$BASELINE_MAX_DOWNLOADS"; then
         BASELINE_DISTANCE=$DISTANCE
         if [ "$DISTANCE" -eq 0 ]; then BASELINE_SOURCE="base sha"; else BASELINE_SOURCE="ancestor"; fi
@@ -254,12 +254,10 @@ else
   if [ -z "$BASELINE_SOURCE" ]; then
     # As a last resort, use the latest run on the target branch. Unlike the runs of a single commit, the branch and
     # event are filtered by the API here, because otherwise newer runs of pull requests could hide all runs on the
-    # target branch. This run always gets at least one download attempt, because if the artifacts of the base commit
-    # and its ancestors expired, the latest run may still have one.
+    # target branch. Only the latest run is tried, but always, because if the artifacts of the base commit and its
+    # ancestors expired, the latest run may still have one. It is skipped if it was already tried above.
     RUNS=$(list_baseline_runs --branch="$TARGET_BRANCH" --event="$EVENT_NAME" --limit=100)
-    MAX_DOWNLOADS=$BASELINE_MAX_DOWNLOADS
-    if [ "$DOWNLOAD_ATTEMPTS" -ge "$MAX_DOWNLOADS" ]; then MAX_DOWNLOADS=$((DOWNLOAD_ATTEMPTS + 1)); fi
-    if try_baseline_runs "$RUNS" "$MAX_DOWNLOADS"; then BASELINE_SOURCE="latest run fallback"; fi
+    if try_baseline_runs "$(head -n 1 <<< "$RUNS")" $((DOWNLOAD_ATTEMPTS + 1)); then BASELINE_SOURCE="latest run fallback"; fi
   fi
 fi
 

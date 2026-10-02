@@ -24,8 +24,8 @@ This project follows [Semantic Versioning](https://semver.org/):
 ### 2. Update version references
 
 Bump the version to `vX.Y.Z` in:
-- `action.yml` — the `version` input default value
-- `README.md` — the `version` input default value in the inputs reference, and the `uses:` example in the usage section
+- `action.yml`: the `version` input default value
+- `README.md`: the `version` input default value in the inputs reference, and the `uses:` example in the usage section
 
 ### 3. Commit and push to main
 
@@ -39,8 +39,13 @@ git push origin main
 
 ```bash
 git tag -s vX.Y.Z -m "Release vX.Y.Z"
+git verify-tag vX.Y.Z
 git push origin vX.Y.Z
 ```
+
+> **Important:** Do not forget the `-s` flag. Tags are not signed by default (`tag.gpgSign` is not set),
+> so a plain `git tag vX.Y.Z` silently creates an unsigned lightweight tag. `git verify-tag` must report
+> a good signature before the tag is pushed.
 
 > **Important:** The tag must point to the commit that includes all the version bumps above.
 > If you need to move the tag (e.g. you pushed it too early), run:
@@ -57,7 +62,7 @@ Extract the release notes for the current version from `CHANGELOG.md` and pass t
 ```bash
 VERSION=vX.Y.Z
 awk "/^## \[$VERSION\]/{found=1; next} /^## \[v/{if(found) exit} found" CHANGELOG.md > /tmp/release-notes.md
-goreleaser release --clean --release-notes=/tmp/release-notes.md
+GITHUB_TOKEN=$(gh auth token) goreleaser release --clean --release-notes=/tmp/release-notes.md
 ```
 
 This will:
@@ -94,7 +99,7 @@ nine assets are present (eight archives plus `checksums.txt`).
 - [ ] `action.yml` default version bumped
 - [ ] `README.md` version references bumped
 - [ ] Changes committed and pushed to `main`
-- [ ] Signed tag created and pushed (pointing to the version-bump commit)
+- [ ] Signed tag created with `git tag -s`, checked with `git verify-tag` and pushed (pointing to the version-bump commit)
 - [ ] `goreleaser release --clean --release-notes=/tmp/release-notes.md` run successfully
 - [ ] Release notes attached with `gh release edit` (goreleaser leaves the body empty)
 - [ ] Release verified: non-empty body, not a draft, all nine assets uploaded

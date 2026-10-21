@@ -36,6 +36,7 @@ You can use the following environment variables to configure the script:
 - MIN_COVERAGE_NEW_CODE: Minimum coverage threshold for new code in percentage (default: 0, disabled)
 - USE_GIT_DIFF: Use git diff for line-level coverage calculation (default: true)
 - BASELINE_LOOKBACK_DAYS: Only consider target-branch runs created in this many days (default: 14)
+- EXTRA_SUMMARY_FILE: Markdown file inserted right below the report title (optional)
 "
 
 if [[ $# != 3 ]]; then
@@ -178,6 +179,20 @@ end_group
 if [ ! -s $COVERAGE_COMMENT_PATH ]; then
   echo "::notice::No coverage report to output"
   exit 0
+fi
+
+if [ -n "$EXTRA_SUMMARY_FILE" ]; then
+  if [ ! -s "$EXTRA_SUMMARY_FILE" ]; then
+    echo "::error::EXTRA_SUMMARY_FILE \"$EXTRA_SUMMARY_FILE\" is missing or empty"
+    exit 1
+  fi
+  {
+    head -n 1 "$COVERAGE_COMMENT_PATH"
+    echo
+    cat "$EXTRA_SUMMARY_FILE"
+    tail -n +2 "$COVERAGE_COMMENT_PATH"
+  } > "$COVERAGE_COMMENT_PATH.tmp"
+  mv "$COVERAGE_COMMENT_PATH.tmp" "$COVERAGE_COMMENT_PATH"
 fi
 
 # Output the coverage report as a multiline GitHub output parameter

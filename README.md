@@ -181,6 +181,12 @@ inputs:
     required: false
     default: '0'
 
+  extra-summary-file:
+    description: |
+      Path to a Markdown file whose content is inserted right below the report title.
+      Useful to show extra coverage figures (e.g. unit vs integration) in the same comment.
+    required: false
+
   github-baseline-workflow-ref:
     description: |
       The ref of the GitHub actions Workflow that produces the baseline coverage.

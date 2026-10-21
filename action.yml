@@ -9,7 +9,7 @@ inputs:
   version:
     description: 'The exact version tag of the go-coverage-report tool to use.'
     required: true
-    default: "v1.5.2"
+    default: "v1.5.3"
 
   sha256sum:
     description: 'Optional SHA256 checksum of the tarball when downloading the go-coverage-report binary.'
@@ -60,6 +60,12 @@ inputs:
       When enabled, the action will generate a diff file and use it for line-level coverage calculation.
     required: false
     default: 'true'
+
+  extra-summary-file:
+    description: |
+      Path to a Markdown file whose content is inserted right below the report title.
+      Useful to show extra coverage figures (e.g. unit vs integration) in the same comment.
+    required: false
 
   github-baseline-workflow-ref:
     description: |
@@ -125,3 +131,4 @@ runs:
         MIN_COVERAGE_NEW_CODE: ${{ inputs.min-coverage-new-code }}
         USE_GIT_DIFF: ${{ inputs.use-git-diff }}
         BASELINE_LOOKBACK_DAYS: ${{ inputs.baseline-lookback-days }}
+        EXTRA_SUMMARY_FILE: ${{ inputs.extra-summary-file }}

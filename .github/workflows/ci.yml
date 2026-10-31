@@ -19,7 +19,7 @@ jobs:
       # Installs the Go and jq versions pinned in mise.toml. jq is used by the fake gh
       # binary in the integration tests of github-action.sh.
       - name: Set up tools
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           install_args: "go jq"
 
@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up tools
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           install_args: "go"
 
